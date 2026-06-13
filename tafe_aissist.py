@@ -1,181 +1,418 @@
 import streamlit as st
-import random
-from datetime import datetime, timedelta
 import time
+import random
 
-# ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="TAFE AIssist",
+    page_title="TAFE · AIssist",
     page_icon="🌾",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ── Brand palette (TAFE: red #CC0000, green #2D7A27, dark navy #1A2B4A) ──────
-TAFE_RED   = "#CC0000"
-TAFE_GREEN = "#2D7A27"
-TAFE_NAVY  = "#1A2B4A"
-TAFE_CREAM = "#F7F4EF"
-TAFE_GREY  = "#F0F0F0"
+# ══════════════════════════════════════════════════════
+# DESIGN TOKENS
+# ══════════════════════════════════════════════════════
+NAVY      = "#0D1B2A"
+NAVY_MID  = "#162436"
+NAVY_SOFT = "#1E3148"
+RED       = "#C8102E"
+RED_SOFT  = "#F5E6E9"
+GREEN     = "#1A7A3C"
+GREEN_SOFT= "#E6F4EC"
+GOLD      = "#D4A017"
+GOLD_SOFT = "#FBF3DC"
+WHITE     = "#FAFAF8"
+SLATE     = "#EDF0F4"
+GREY      = "#C8CDD6"
+TEXT_DARK = "#0D1B2A"
+TEXT_MID  = "#4A5568"
+TEXT_LITE = "#8896A8"
 
 st.markdown(f"""
 <style>
-  /* ── Global resets ── */
-  [data-testid="stAppViewContainer"] {{ background: {TAFE_CREAM}; }}
-  [data-testid="stSidebar"]          {{ background: {TAFE_NAVY}; }}
-  [data-testid="stSidebar"] * {{ color: #E8E8E8 !important; }}
-  [data-testid="stSidebar"] .stSelectbox label {{ color: #aaa !important; font-size:0.75rem; }}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-  /* ── Top bar logo strip ── */
-  .top-bar {{
-    background: {TAFE_NAVY};
-    color: white;
-    padding: 12px 24px;
+*, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+
+html, body, [data-testid="stAppViewContainer"] {{
+    font-family: 'Inter', sans-serif;
+    background: {SLATE};
+    color: {TEXT_DARK};
+}}
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"] {{
+    background: {NAVY} !important;
+    border-right: none;
+}}
+[data-testid="stSidebar"] > div:first-child {{ padding: 0; }}
+section[data-testid="stSidebar"] .stRadio label {{
+    color: #8896A8 !important;
+    font-size: 0.82rem !important;
+}}
+[data-testid="stSidebar"] .stSelectbox label {{ color: #556 !important; font-size:0.7rem !important; }}
+
+/* ── Hide chrome ── */
+#MainMenu, footer, header {{ visibility: hidden; }}
+.stDeployButton {{ display: none; }}
+[data-testid="stToolbar"] {{ display: none; }}
+
+/* ── Buttons ── */
+.stButton > button {{
+    border-radius: 8px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem !important;
+    border: 1.5px solid {GREY} !important;
+    background: {WHITE} !important;
+    color: {TEXT_DARK} !important;
+    padding: 7px 14px !important;
+    transition: all 0.15s ease !important;
+    letter-spacing: 0.01em !important;
+}}
+.stButton > button:hover {{
+    border-color: {RED} !important;
+    color: {RED} !important;
+    background: {RED_SOFT} !important;
+}}
+
+/* ── Primary button ── */
+.stButton > button[kind="primary"] {{
+    background: {RED} !important;
+    color: white !important;
+    border-color: {RED} !important;
+}}
+.stButton > button[kind="primary"]:hover {{
+    background: #a50e26 !important;
+    color: white !important;
+}}
+
+/* ── Inputs ── */
+.stTextInput > div > div > input {{
+    border-radius: 10px !important;
+    border: 1.5px solid {GREY} !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.88rem !important;
+    padding: 10px 14px !important;
+    background: {WHITE} !important;
+    color: {TEXT_DARK} !important;
+}}
+.stTextInput > div > div > input:focus {{
+    border-color: {RED} !important;
+    box-shadow: 0 0 0 3px rgba(200,16,46,0.08) !important;
+}}
+
+/* ── Select ── */
+.stSelectbox > div > div {{
+    border-radius: 10px !important;
+    border: 1.5px solid {GREY} !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.88rem !important;
+    background: {WHITE} !important;
+}}
+
+/* ── Radio ── */
+.stRadio > div {{ gap: 4px; }}
+
+/* ── Columns gap ── */
+div[data-testid="stHorizontalBlock"] > div {{ padding: 0 5px; }}
+
+/* ── Progress bar ── */
+.stProgress > div > div > div > div {{ background: {GREEN} !important; border-radius: 99px; }}
+.stProgress > div > div > div {{ background: {SLATE}; border-radius: 99px; }}
+
+/* ── Divider ── */
+hr {{ border: none; border-top: 1px solid {GREY}; margin: 16px 0; opacity: 0.5; }}
+
+/* ── Alerts ── */
+.stSuccess {{ border-radius: 10px !important; }}
+
+/* ────────────────────────────────────────────
+   COMPONENT CLASSES
+──────────────────────────────────────────── */
+
+/* Top bar */
+.topbar {{
+    background: linear-gradient(135deg, {NAVY} 0%, {NAVY_SOFT} 100%);
+    border-radius: 14px;
+    padding: 18px 28px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-  }}
-  .top-bar .brand {{ font-size: 1.6rem; font-weight: 800; color: {TAFE_RED}; letter-spacing:1px; }}
-  .top-bar .sub   {{ font-size: 0.85rem; color: #ccc; }}
-  .top-bar .badge {{
+    gap: 20px;
+    margin-bottom: 22px;
+    box-shadow: 0 4px 20px rgba(13,27,42,0.15);
+}}
+.topbar-brand {{ display: flex; flex-direction: column; }}
+.topbar-logo {{
+    font-size: 1.55rem; font-weight: 900; color: {RED};
+    letter-spacing: 1.5px; line-height: 1;
+}}
+.topbar-sub {{ font-size: 0.72rem; color: {TEXT_LITE}; margin-top: 3px; letter-spacing: 0.3px; }}
+.topbar-divider {{
+    width: 1px; height: 36px;
+    background: rgba(255,255,255,0.12); margin: 0 4px;
+}}
+.topbar-title {{ font-size: 1.05rem; font-weight: 700; color: white; }}
+.topbar-badge {{
     margin-left: auto;
-    background: {TAFE_GREEN};
-    color: white;
-    border-radius: 20px;
-    padding: 4px 14px;
-    font-size: 0.78rem;
-    font-weight: 600;
-  }}
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.85);
+    border-radius: 99px; padding: 5px 16px;
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3px;
+    backdrop-filter: blur(8px);
+}}
 
-  /* ── Agent cards ── */
-  .agent-card {{
-    background: white;
-    border-radius: 12px;
-    padding: 20px 24px;
-    border-left: 4px solid {TAFE_RED};
-    margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  }}
-  .agent-card h3 {{ margin:0 0 4px 0; color: {TAFE_NAVY}; font-size: 1rem; }}
-  .agent-card p  {{ margin:0; color: #666; font-size: 0.84rem; }}
+/* Section header */
+.sec {{
+    font-size: 0.7rem; font-weight: 700; color: {TEXT_LITE};
+    text-transform: uppercase; letter-spacing: 1.5px;
+    margin-bottom: 12px; padding-bottom: 8px;
+    border-bottom: 2px solid {RED};
+    display: flex; align-items: center; gap: 8px;
+}}
+.sec span {{ color: {RED}; font-size: 0.85rem; }}
 
-  /* ── Chat bubbles ── */
-  .chat-user {{
-    background: {TAFE_NAVY};
-    color: white;
-    border-radius: 18px 18px 4px 18px;
-    padding: 12px 18px;
-    margin: 8px 0 8px 20%;
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }}
-  .chat-ai {{
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 18px 18px 18px 4px;
-    padding: 14px 18px;
-    margin: 8px 20% 8px 0;
-    font-size: 0.9rem;
-    line-height: 1.6;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-  }}
-  .chat-ai .ai-label {{
-    font-size: 0.72rem;
-    color: {TAFE_RED};
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-  }}
-
-  /* ── Metric tiles ── */
-  .metric-tile {{
-    background: white;
-    border-radius: 10px;
-    padding: 16px 20px;
-    text-align: center;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.07);
-  }}
-  .metric-tile .val {{ font-size: 2rem; font-weight: 800; color: {TAFE_NAVY}; }}
-  .metric-tile .lbl {{ font-size: 0.78rem; color: #888; margin-top:2px; }}
-  .metric-tile .delta {{ font-size: 0.78rem; color: {TAFE_GREEN}; font-weight: 600; }}
-
-  /* ── Section headers ── */
-  .sec-header {{
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: {TAFE_NAVY};
-    border-bottom: 2px solid {TAFE_RED};
-    padding-bottom: 6px;
-    margin-bottom: 16px;
-  }}
-
-  /* ── Tags / pills ── */
-  .pill {{
-    display: inline-block;
-    background: {TAFE_GREY};
-    color: {TAFE_NAVY};
-    border-radius: 20px;
-    padding: 3px 12px;
-    font-size: 0.76rem;
-    font-weight: 600;
-    margin: 2px;
-  }}
-  .pill-green {{ background: #e6f4e5; color: {TAFE_GREEN}; }}
-  .pill-red   {{ background: #fdeaea; color: {TAFE_RED};   }}
-
-  /* ── Storyboard block ── */
-  .storyboard {{
-    background: white;
-    border-radius: 10px;
-    padding: 16px 20px;
-    border: 1px solid #e0e0e0;
-    margin-bottom: 12px;
-  }}
-  .storyboard h4 {{ margin: 0 0 6px 0; color: {TAFE_NAVY}; font-size: 0.95rem; }}
-  .storyboard p  {{ margin: 0; color: #555; font-size: 0.85rem; line-height:1.5; }}
-
-  /* ── Campaign card ── */
-  .campaign-card {{
-    background: white;
-    border-radius: 12px;
-    padding: 18px 22px;
-    border-top: 4px solid {TAFE_GREEN};
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+/* Profile card */
+.profile-card {{
+    background: {WHITE};
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(13,27,42,0.06);
     margin-bottom: 14px;
-  }}
-  .campaign-card h4 {{ margin: 0 0 4px 0; color: {TAFE_NAVY}; }}
-  .campaign-card .nudge-preview {{
-    background: {TAFE_CREAM};
-    border-radius: 8px;
-    padding: 12px;
-    margin-top: 10px;
-    font-size: 0.85rem;
-    color: #444;
+}}
+.profile-avatar {{
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, {RED} 0%, #8B0020 100%);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; font-weight: 800; color: white;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}}
+.profile-name {{ font-size: 1rem; font-weight: 700; color: {TEXT_DARK}; }}
+.profile-role {{ font-size: 0.8rem; color: {TEXT_MID}; margin-top: 2px; }}
+.profile-goal {{
+    font-size: 0.78rem; color: {TEXT_MID};
+    background: {GOLD_SOFT}; border-radius: 8px;
+    padding: 7px 10px; margin-top: 12px;
+    border-left: 3px solid {GOLD};
+}}
+
+/* Metric card */
+.metric-row {{ display: flex; gap: 10px; margin-bottom: 14px; }}
+.metric {{
+    flex: 1; background: {WHITE}; border-radius: 12px;
+    padding: 14px 12px; text-align: center;
+    box-shadow: 0 1px 6px rgba(13,27,42,0.05);
+}}
+.metric-val {{ font-size: 1.6rem; font-weight: 800; color: {TEXT_DARK}; line-height: 1; }}
+.metric-val.danger {{ color: {RED}; }}
+.metric-val.success {{ color: {GREEN}; }}
+.metric-lbl {{ font-size: 0.72rem; color: {TEXT_LITE}; margin-top: 4px; font-weight: 500; }}
+
+/* Progress panel */
+.progress-panel {{
+    background: {WHITE}; border-radius: 12px;
+    padding: 16px 18px; margin-bottom: 14px;
+    box-shadow: 0 1px 6px rgba(13,27,42,0.05);
+}}
+.progress-label {{ font-size: 0.75rem; color: {TEXT_LITE}; font-weight: 600; margin-bottom: 8px; }}
+.progress-track {{
+    background: {SLATE}; border-radius: 99px; height: 8px; overflow: hidden;
+}}
+.progress-fill {{
+    height: 8px; border-radius: 99px;
+    background: linear-gradient(90deg, {GREEN} 0%, #25A85A 100%);
+}}
+.progress-val {{ font-size: 0.88rem; font-weight: 700; color: {TEXT_DARK}; margin-top: 7px; }}
+
+/* Pill tags */
+.pill-row {{ display: flex; flex-wrap: wrap; gap: 6px; }}
+.pill {{
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 99px; padding: 4px 11px;
+    font-size: 0.75rem; font-weight: 600;
+}}
+.pill-green {{ background: {GREEN_SOFT}; color: {GREEN}; }}
+.pill-red   {{ background: {RED_SOFT};   color: {RED};   }}
+.pill-gold  {{ background: {GOLD_SOFT};  color: #8B6800; }}
+.pill-slate {{ background: {SLATE};      color: {TEXT_MID}; }}
+.pill-navy  {{ background: #E8EDF3;      color: {NAVY}; }}
+
+/* Chat container */
+.chat-wrap {{
+    background: {WHITE}; border-radius: 14px;
+    padding: 20px; min-height: 380px;
+    box-shadow: 0 2px 12px rgba(13,27,42,0.06);
+    display: flex; flex-direction: column; gap: 14px;
+    margin-bottom: 14px;
+}}
+
+/* Chat bubble — AI */
+.bubble-ai {{
+    display: flex; gap: 10px; align-items: flex-start;
+}}
+.bubble-ai-avatar {{
+    width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, {RED} 0%, #8B0020 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 800; color: white;
+}}
+.bubble-ai-content {{
+    background: {SLATE}; border-radius: 4px 14px 14px 14px;
+    padding: 12px 16px; max-width: 85%;
+}}
+.bubble-ai-label {{
+    font-size: 0.68rem; font-weight: 700; color: {RED};
+    letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 5px;
+}}
+.bubble-ai-text {{ font-size: 0.87rem; color: {TEXT_DARK}; line-height: 1.6; }}
+
+/* Chat bubble — User */
+.bubble-user {{
+    display: flex; justify-content: flex-end;
+}}
+.bubble-user-content {{
+    background: linear-gradient(135deg, {NAVY} 0%, {NAVY_SOFT} 100%);
+    color: white; border-radius: 14px 4px 14px 14px;
+    padding: 11px 16px; max-width: 75%;
+    font-size: 0.87rem; line-height: 1.5;
+}}
+
+/* Quick prompt chips */
+.chip-row {{ display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }}
+
+/* Storyboard module card */
+.sb-card {{
+    background: {WHITE}; border-radius: 12px;
+    border: 1px solid #E4E8EE;
+    padding: 16px 20px; margin-bottom: 10px;
+}}
+.sb-seq {{
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 8px;
+    font-size: 0.75rem; font-weight: 800; color: white;
+    flex-shrink: 0;
+}}
+.sb-title {{ font-size: 0.95rem; font-weight: 700; color: {TEXT_DARK}; }}
+.sb-type {{ font-size: 0.75rem; color: {TEXT_MID}; margin-top: 1px; }}
+.sb-narration {{ font-size: 0.84rem; color: {TEXT_MID}; line-height: 1.6; margin-top: 8px; }}
+.sb-assets {{
+    font-size: 0.78rem; color: {TEXT_LITE}; margin-top: 8px;
+    padding-top: 8px; border-top: 1px solid #EEF0F4;
+}}
+
+/* QA check item */
+.qa-item {{
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 0.83rem; padding: 7px 0;
+    border-bottom: 1px solid #F0F2F6; color: {TEXT_DARK};
+}}
+.qa-pass {{ color: {GREEN}; font-weight: 700; font-size: 0.9rem; flex-shrink:0; }}
+.qa-fail {{ color: {RED};   font-weight: 700; font-size: 0.9rem; flex-shrink:0; }}
+
+/* Campaign card */
+.camp-card {{
+    background: {WHITE}; border-radius: 14px;
+    padding: 18px 20px; margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(13,27,42,0.06);
+    border-top: 4px solid {GREEN};
+    cursor: pointer; transition: box-shadow 0.15s;
+}}
+.camp-card:hover {{ box-shadow: 0 4px 18px rgba(13,27,42,0.1); }}
+.camp-title {{ font-size: 0.95rem; font-weight: 700; color: {TEXT_DARK}; }}
+.camp-meta  {{ font-size: 0.78rem; color: {TEXT_LITE}; margin-top: 3px; }}
+.nudge-box {{
+    background: {SLATE}; border-radius: 10px;
+    padding: 13px 15px; margin-top: 12px;
+    font-size: 0.84rem; color: {TEXT_MID}; line-height: 1.65;
+    border-left: 3px solid {GREEN};
     font-style: italic;
-    line-height: 1.5;
-  }}
+}}
 
-  /* Hide streamlit branding */
-  #MainMenu, footer, header {{ visibility: hidden; }}
-  .stDeployButton {{ display:none; }}
+/* Team member row */
+.team-row {{
+    background: {WHITE}; border-radius: 10px;
+    padding: 11px 16px; margin-bottom: 7px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 1px 4px rgba(13,27,42,0.04);
+}}
+.team-avatar {{
+    width: 34px; height: 34px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.78rem; font-weight: 800; color: white; flex-shrink: 0;
+}}
+.team-name {{ font-size: 0.87rem; font-weight: 600; color: {TEXT_DARK}; }}
+.team-role {{ font-size: 0.75rem; color: {TEXT_LITE}; }}
+.team-bar-track {{ background: #EEF0F4; border-radius: 99px; height: 5px; margin-top: 5px; }}
+.team-bar-fill  {{ height: 5px; border-radius: 99px; }}
 
-  div[data-testid="stHorizontalBlock"] > div {{ padding: 0 6px; }}
+/* Heatmap bar */
+.hm-row {{
+    background: {WHITE}; border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 7px;
+    box-shadow: 0 1px 3px rgba(13,27,42,0.04);
+}}
+.hm-name {{ font-size: 0.84rem; font-weight: 600; color: {TEXT_DARK}; }}
+.hm-pct  {{ font-size: 0.84rem; font-weight: 700; }}
+
+/* Birthday queue row */
+.bday-row {{
+    background: {WHITE}; border-radius: 10px;
+    padding: 10px 16px; margin-bottom: 7px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 1px 3px rgba(13,27,42,0.04);
+}}
+.bday-avatar {{
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, {GOLD} 0%, #a07800 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.78rem; font-weight: 800; color: white; flex-shrink: 0;
+}}
+.bday-name {{ font-size: 0.87rem; font-weight: 600; color: {TEXT_DARK}; }}
+.bday-course {{ font-size: 0.75rem; color: {TEXT_LITE}; }}
+
+/* Stat mini badge */
+.stat-mini {{
+    display: inline-flex; flex-direction: column;
+    align-items: center; background: {SLATE};
+    border-radius: 10px; padding: 8px 14px;
+}}
+.stat-mini-val {{ font-size: 1.2rem; font-weight: 800; color: {TEXT_DARK}; }}
+.stat-mini-lbl {{ font-size: 0.68rem; color: {TEXT_LITE}; font-weight: 500; }}
+
+/* Sidebar nav item */
+.nav-item {{
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; border-radius: 10px;
+    cursor: pointer; transition: background 0.15s;
+    color: #8896A8; font-size: 0.85rem; font-weight: 500;
+    margin-bottom: 3px;
+}}
+.nav-item:hover {{ background: rgba(255,255,255,0.06); color: white; }}
+.nav-item.active {{ background: rgba(200,16,46,0.18); color: white; border-left: 3px solid {RED}; }}
+
+/* Info footer */
+.info-footer {{
+    font-size: 0.73rem; color: {TEXT_LITE};
+    margin-top: 8px; line-height: 1.6;
+    padding: 10px 0;
+    border-top: 1px solid rgba(200,205,214,0.4);
+}}
 </style>
 """, unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Mock data
-# ══════════════════════════════════════════════════════════════════════════════
-
-LEARNER_PROFILES = {
-    "Arjun Mehta (Engineer — Powertrain)": {
-        "role": "Engineer", "dept": "Powertrain", "level": "Mid",
+# ══════════════════════════════════════════════════════
+# DATA
+# ══════════════════════════════════════════════════════
+LEARNERS = {
+    "Arjun Mehta — Engineer, Powertrain": {
+        "initials": "AM", "role": "Engineer", "dept": "Powertrain", "level": "Mid-level",
         "completed": 14, "in_progress": 3, "overdue": 1,
         "completion_rate": 72, "hours_ytd": 38,
         "skills": ["Hydraulics", "Engine Calibration", "Quality Standards"],
-        "gaps": ["Safety Compliance (overdue)", "Advanced CAD"],
+        "gaps": ["Safety Compliance", "Advanced CAD"],
         "recommended": [
             ("ISO 9001 Quality Management for Engineers", "Compliance", "2h 30m"),
             ("Advanced CAD Design Principles", "Technical", "4h"),
@@ -183,8 +420,8 @@ LEARNER_PROFILES = {
         ],
         "career_goal": "Senior Design Engineer",
     },
-    "Priya Venkat (Manager — Sales)": {
-        "role": "Manager", "dept": "Sales", "level": "Senior",
+    "Priya Venkat — Manager, Sales": {
+        "initials": "PV", "role": "Manager", "dept": "Sales", "level": "Senior",
         "completed": 22, "in_progress": 2, "overdue": 0,
         "completion_rate": 91, "hours_ytd": 61,
         "skills": ["Product Knowledge", "CRM", "Dealer Relations"],
@@ -195,718 +432,700 @@ LEARNER_PROFILES = {
             ("Advanced Negotiation Techniques", "Sales", "2h 30m"),
         ],
         "career_goal": "Regional Sales Director",
-        "team_size": 12,
-        "team_completion": 68,
-    },
-    "Dr. Ramesh Iyer (President — R&D)": {
-        "role": "Leadership", "dept": "R&D", "level": "C-Suite",
-        "completed": 8, "in_progress": 1, "overdue": 0,
-        "completion_rate": 88, "hours_ytd": 18,
-        "skills": ["Strategic Leadership", "Innovation Management"],
-        "gaps": ["GenAI for R&D Leaders"],
-        "recommended": [
-            ("GenAI for R&D and Innovation Leaders", "Leadership", "1h 30m"),
-            ("IP Management in Manufacturing", "Legal", "2h"),
-        ],
-        "career_goal": "—",
-        "team_size": 240,
-        "team_completion": 54,
-        "access_level": "r&d_confidential",
+        "team_size": 12, "team_completion": 68,
     },
 }
 
-CAMPAIGN_EVENTS = [
-    {
-        "name": "🎂 Birthday Learning Nudge",
-        "type": "Birthday",
-        "trigger": "Daily at 8:00 AM",
-        "reach": "~12 employees/day",
-        "channel": "Microsoft Teams",
-        "nudge": "Hi Suresh! 🎂 Happy Birthday from TAFE L&D! It's a great day to invest 20 minutes in yourself — we've picked a short module on {topic} that fits your current role. Start it now and celebrate growth! 🌾",
-        "status": "Active",
-        "sent_30d": 342,
-        "open_rate": 67,
-        "start_rate": 41,
-    },
-    {
-        "name": "📚 World Book Day",
-        "type": "Cultural",
-        "trigger": "April 23 (annual)",
-        "reach": "All 4,200 employees",
-        "channel": "Teams + Email",
-        "nudge": "Hi {name}! Today is World Book Day 📚 — and learning is at the heart of TAFE's culture. We've curated a 30-minute reading challenge from our knowledge library. Join 847 colleagues who've already started today!",
-        "status": "Completed",
-        "sent_30d": 4200,
-        "open_rate": 72,
-        "start_rate": 38,
-    },
-    {
-        "name": "🚜 Farmer's Day Learning Sprint",
-        "type": "Brand",
-        "trigger": "December 23 (annual)",
-        "reach": "All employees",
-        "channel": "Teams + Moodle Banner",
-        "nudge": "Happy Farmer's Day! 🌾 As TAFE employees, we celebrate the farmers we serve every day. This week's sprint: complete one module from our Product Knowledge series and earn a special Farmer's Day badge.",
-        "status": "Draft",
-        "sent_30d": 0,
-        "open_rate": 0,
-        "start_rate": 0,
-    },
-    {
-        "name": "🪔 Diwali Learning Celebration",
-        "type": "Cultural",
-        "trigger": "Diwali (Nov)",
-        "reach": "India offices",
-        "channel": "Teams",
-        "nudge": "Diwali Greetings! 🪔 May this festival of lights also light up your learning journey. We've lined up a short, festive 15-minute module — a gift from L&D to you. Wishing you and your family a joyful Diwali!",
-        "status": "Active",
-        "sent_30d": 1840,
-        "open_rate": 81,
-        "start_rate": 55,
-    },
-]
-
-STORYBOARD_MODULES = {
-    "New Product Introduction — TAFE DIVA Pro Tractor": {
-        "objectives": [
-            "Describe the key differentiators of TAFE DIVA Pro vs. previous generation",
-            "Explain the 4WD transmission mechanism and maintenance schedule",
-            "Identify common dealer FAQs and respond with confidence",
-        ],
+BRIEFS = {
+    "TAFE DIVA Pro — New Product Introduction": {
         "audience": "Dealer network, Sales Engineers",
-        "duration": "45 minutes",
-        "format": "SCORM e-learning + embedded video",
-        "modules": [
-            {
-                "seq": "01",
-                "title": "Welcome & Product Overview",
-                "type": "Intro Screen",
-                "narration": "Open with the TAFE DIVA Pro hero shot. Narrator: 'Meet the next evolution of precision farming...' Transition to feature comparison table vs. DIVA Standard.",
-                "duration": "3 min",
-                "assets": "Hero video (60s), feature comparison graphic",
-            },
-            {
-                "seq": "02",
-                "title": "Engine & Powertrain Deep Dive",
-                "type": "Explainer + Diagram",
-                "narration": "Animated 3D cutaway of the 50HP engine. Callout labels highlight: turbocharged intake, dual-stage filtration, Agri-ECU. Knowledge check: drag-and-drop component identification.",
-                "duration": "10 min",
-                "assets": "3D engine model (Unity), labeled diagram PNG",
-            },
-            {
-                "seq": "03",
-                "title": "4WD Transmission & Field Applications",
-                "type": "Scenario-based",
-                "narration": "Branching scenario: farmer selects terrain type (paddy, upland, orchard) — learner must choose the correct gear range and 4WD mode. Wrong answers show consequences with corrective feedback.",
-                "duration": "12 min",
-                "assets": "Branching scenario (Articulate), terrain photos",
-            },
-            {
-                "seq": "04",
-                "title": "Dealer Q&A Simulator",
-                "type": "Conversational AI Practice",
-                "narration": "AI-powered role-play: simulated customer asks pricing, comparison with John Deere, warranty. Learner types responses; AI scores on accuracy and confidence language.",
-                "duration": "12 min",
-                "assets": "AIssist Q&A module integration",
-            },
-            {
-                "seq": "05",
-                "title": "Assessment & Certification",
-                "type": "Quiz + Badge",
-                "narration": "20-question adaptive quiz. Pass mark 80%. On pass: 'TAFE DIVA Pro Certified' digital badge issued to Moodle profile. On fail: targeted remediation loop to weak modules.",
-                "duration": "8 min",
-                "assets": "Quiz bank (40 Qs), badge graphic",
-            },
-        ],
-        "wcag_flags": [],
-        "id_notes": "Ensure all diagrams have ALT text. Avoid red/green only color coding for color-blind accessibility. Narration script to be reviewed by Product team before voice recording.",
-    },
-    "Safety Compliance — Working at Height (Annual Mandatory)": {
+        "duration": "45 min", "format": "SCORM + Video",
         "objectives": [
-            "Identify hazardous situations requiring fall protection equipment",
-            "Correctly apply the hierarchy of controls for working at height",
-            "Complete the annual compliance acknowledgment",
+            "Describe key differentiators of DIVA Pro vs. previous generation",
+            "Explain the 4WD transmission mechanism and maintenance schedule",
+            "Handle common dealer FAQs with confidence",
         ],
-        "audience": "All plant and shop-floor employees (mandatory)",
-        "duration": "30 minutes",
-        "format": "SCORM e-learning",
         "modules": [
-            {
-                "seq": "01",
-                "title": "Why Safety Matters at TAFE",
-                "type": "Video + Acknowledgment",
-                "narration": "CEO message video (2 min). Key stats: 0 LTI target. Emotional hook: real (anonymised) near-miss story. Learner clicks 'I commit to safe practices' to proceed.",
-                "duration": "4 min",
-                "assets": "CEO video, acknowledgment widget",
-            },
-            {
-                "seq": "02",
-                "title": "Hazard Identification — Spot the Risk",
-                "type": "Hotspot Interaction",
-                "narration": "360° photo of a workshop scene. Learner clicks on hazards they can identify. 8 hotspots: 3 correct (ladder without foot, unsecured tool, no harness). Feedback per click.",
-                "duration": "8 min",
-                "assets": "360° scene photo, hotspot config",
-            },
-            {
-                "seq": "03",
-                "title": "Hierarchy of Controls",
-                "type": "Drag-and-Drop",
-                "narration": "Pyramid diagram. Learner drags 6 control types to the correct level (Elimination → Substitution → Engineering → Administrative → PPE). Animated reveal on completion.",
-                "duration": "6 min",
-                "assets": "Hierarchy diagram, drag-drop interaction",
-            },
-            {
-                "seq": "04",
-                "title": "Compliance Assessment",
-                "type": "Graded Quiz",
-                "narration": "15 questions. 100% pass required (mandatory compliance). Unlimited attempts. Completion auto-records in Moodle for HR audit trail.",
-                "duration": "12 min",
-                "assets": "Question bank (30 Qs, randomised draw)",
-            },
+            {"seq": "01", "color": RED,   "title": "Welcome & Product Overview",     "type": "Intro + Hero Video",     "narration": "Open with DIVA Pro hero shot. Narrator introduces the product generation. Transition to feature comparison table vs DIVA Standard. Tone: energetic, confident.", "assets": "Hero video (60s), comparison graphic"},
+            {"seq": "02", "color": NAVY,  "title": "Engine & Powertrain Deep Dive",  "type": "Explainer + 3D Diagram", "narration": "Animated 3D cutaway of 50HP engine with callout labels: turbocharged intake, dual-stage filtration, Agri-ECU. Knowledge check: drag-and-drop component identification.", "assets": "3D engine model (Unity), labeled diagram PNG"},
+            {"seq": "03", "color": NAVY,  "title": "4WD Transmission & Field Use",   "type": "Branching Scenario",    "narration": "Farmer selects terrain type (paddy, upland, orchard) — learner chooses correct gear range and 4WD mode. Wrong answers show consequences with corrective feedback.", "assets": "Branching scenario (Articulate), terrain photos"},
+            {"seq": "04", "color": GREEN, "title": "Dealer Q&A Simulator",           "type": "AI Role-Play Practice", "narration": "AI-powered simulation: customer asks pricing, John Deere comparison, warranty. Learner types responses; AI scores on accuracy and confidence language.", "assets": "AIssist Q&A integration"},
+            {"seq": "05", "color": GOLD,  "title": "Assessment & Certification",     "type": "Adaptive Quiz + Badge",  "narration": "20-question adaptive quiz. Pass mark 80%. On pass: DIVA Pro Certified digital badge issued to Moodle profile. On fail: targeted remediation loop.", "assets": "Quiz bank (40 Qs), badge graphic"},
         ],
-        "wcag_flags": ["Ensure all videos have captions", "Hotspot targets must be keyboard-navigable"],
-        "id_notes": "This is a mandatory course — zero tolerance for gamification elements that trivialise safety. Tone: serious, respectful. Legal review of compliance language required before publish.",
+        "wcag": ["Ensure all diagrams include ALT text", "Avoid red/green-only colour coding for accessibility"],
+        "notes": "Tone: energetic and confident. All narration scripts require Product team sign-off before voice recording. Legal review of warranty language required.",
+    },
+    "Safety Compliance — Working at Height (Mandatory Annual)": {
+        "audience": "All plant and shop-floor employees",
+        "duration": "30 min", "format": "SCORM e-learning",
+        "objectives": [
+            "Identify hazardous situations requiring fall protection",
+            "Apply the hierarchy of controls for working at height",
+            "Complete the mandatory compliance acknowledgment",
+        ],
+        "modules": [
+            {"seq": "01", "color": RED,   "title": "Why Safety Matters at TAFE",     "type": "CEO Video + Acknowledgment", "narration": "CEO message (2 min). Key stats: 0 LTI target. Anonymised near-miss story for emotional hook. Learner clicks 'I commit to safe practices' to proceed.", "assets": "CEO video, acknowledgment widget"},
+            {"seq": "02", "color": NAVY,  "title": "Spot the Hazard",               "type": "360° Hotspot Interaction",   "narration": "360° workshop scene. Learner clicks on hazards: 3 of 8 hotspots are correct (unsecured ladder, tool without anchor, no harness). Feedback per click.", "assets": "360° scene photo, hotspot config"},
+            {"seq": "03", "color": NAVY,  "title": "Hierarchy of Controls",         "type": "Drag-and-Drop",              "narration": "Pyramid diagram. Learner drags 6 control types to correct level (Elimination → PPE). Animated reveal on completion.", "assets": "Hierarchy diagram, drag-drop widget"},
+            {"seq": "04", "color": GREEN, "title": "Compliance Assessment",         "type": "Graded Quiz (100% required)", "narration": "15 questions, 100% pass required. Unlimited attempts. Completion auto-records in Moodle for HR audit trail.", "assets": "Question bank (30 Qs, randomised)"},
+        ],
+        "wcag": ["All videos require closed captions", "Hotspot targets must be keyboard-navigable"],
+        "notes": "Mandatory course — zero tolerance for gamification that trivialises safety. Tone: serious, respectful. Legal review of compliance language required before publish.",
     },
 }
 
-QA_CHECKLIST_ITEMS = [
-    ("Visual Consistency", "Fonts match TAFE brand guide (Calibri body, TAFE Red headers)", True),
-    ("Visual Consistency", "Colour palette compliant — no unapproved hex values", True),
-    ("Visual Consistency", "Logo usage correct — not distorted, on approved backgrounds", True),
-    ("Instructional Integrity", "Learning objectives stated on slide 1", True),
-    ("Instructional Integrity", "Each objective addressed by at least one activity", True),
-    ("Instructional Integrity", "Knowledge checks present every 10 minutes", False),
-    ("Accessibility", "All images have descriptive ALT text", False),
-    ("Accessibility", "Colour contrast ratio ≥ 4.5:1 for body text", True),
-    ("Accessibility", "Videos include closed captions", False),
-    ("Technical", "SCORM package tested in Moodle staging", True),
-    ("Technical", "Module completes on pass of final assessment", True),
-    ("Technical", "Progress saved on mid-module exit", True),
+QA_ITEMS = [
+    ("Visual",        "Fonts match TAFE brand guide (Inter body, TAFE Red headers)",     True),
+    ("Visual",        "Colour palette compliant — no unapproved hex values",              True),
+    ("Visual",        "Logo usage correct — not distorted, on approved backgrounds",      True),
+    ("Instructional", "Learning objectives stated on opening screen",                     True),
+    ("Instructional", "Each objective addressed by at least one activity",                True),
+    ("Instructional", "Knowledge checks present every 10 minutes",                        False),
+    ("Accessibility", "All images have descriptive ALT text",                             False),
+    ("Accessibility", "Colour contrast ratio ≥ 4.5:1 for body text",                     True),
+    ("Accessibility", "Videos include closed captions",                                   False),
+    ("Technical",     "SCORM package tested in Moodle staging",                           True),
+    ("Technical",     "Module completes on pass of final assessment",                     True),
+    ("Technical",     "Progress saved on mid-module exit",                                True),
 ]
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Sidebar navigation
-# ══════════════════════════════════════════════════════════════════════════════
+CAMPAIGNS = [
+    {
+        "name": "Birthday Learning Nudge", "icon": "🎂", "type": "Birthday",
+        "trigger": "Daily · 8:00 AM", "reach": "~12 employees/day",
+        "channel": "Microsoft Teams", "status": "Active",
+        "sent": 342, "open_rate": 67, "start_rate": 41,
+        "nudge": "Hi {name}! 🎂 Happy Birthday from TAFE L&D! Today's a great day to invest 20 minutes in yourself — we've picked a short module that fits your role perfectly. Celebrate your growth! 🌾",
+        "color": GOLD,
+    },
+    {
+        "name": "World Book Day Sprint", "icon": "📚", "type": "Cultural",
+        "trigger": "April 23 (annual)", "reach": "All 4,200 employees",
+        "channel": "Teams + Email", "status": "Completed",
+        "sent": 4200, "open_rate": 72, "start_rate": 38,
+        "nudge": "Hi {name}! Today is World Book Day 📚 — learning is at the heart of TAFE's culture. We've curated a 30-minute reading challenge from our knowledge library. Join 847 colleagues who've already started today!",
+        "color": GREEN,
+    },
+    {
+        "name": "Farmer's Day Learning Sprint", "icon": "🚜", "type": "Brand",
+        "trigger": "December 23 (annual)", "reach": "All employees",
+        "channel": "Teams + Moodle Banner", "status": "Draft",
+        "sent": 0, "open_rate": 0, "start_rate": 0,
+        "nudge": "Happy Farmer's Day! 🌾 As TAFE employees, we celebrate the farmers we serve every day. This week: complete one module from our Product Knowledge series and earn a special Farmer's Day badge.",
+        "color": NAVY,
+    },
+    {
+        "name": "Diwali Learning Celebration", "icon": "🪔", "type": "Cultural",
+        "trigger": "Diwali · November", "reach": "India offices · 3,100",
+        "channel": "Microsoft Teams", "status": "Active",
+        "sent": 1840, "open_rate": 81, "start_rate": 55,
+        "nudge": "Diwali Greetings! 🪔 May this festival of lights also light up your learning journey. We've lined up a short 15-minute module — a gift from L&D to you. Wishing you and your family a joyful Diwali!",
+        "color": RED,
+    },
+]
 
+BDAY_QUEUE = [
+    ("Suresh Kumar",  "SK", "Sales",           "Product Knowledge Essentials",      "Sent · 8:02 AM",   True),
+    ("Anitha Rao",    "AR", "Manufacturing",   "Safety Compliance Refresher",        "Sent · 8:02 AM",   True),
+    ("Gopal M.",      "GM", "R&D",             "DIVA Pro Certification",             "Pending · 9:00 AM", False),
+    ("Latha S.",      "LS", "HR",              "Leadership Foundations",             "Pending · 9:00 AM", False),
+]
+
+TEAM_MEMBERS = [
+    ("Suresh Kumar",  "SK", "Sales Executive",  92, "On Track"),
+    ("Meena Raj",     "MR", "Sales Executive",  78, "On Track"),
+    ("Anand P.",      "AP", "Area Manager",     65, "At Risk"),
+    ("Divya S.",      "DS", "Sales Executive",  55, "At Risk"),
+    ("Karthik M.",    "KM", "Key Accounts",     30, "Overdue"),
+    ("Raj Patel",     "RP", "Sales Executive",  82, "On Track"),
+]
+
+
+def status_color(s):
+    return {
+        "On Track": GREEN, "At Risk": "#D97706", "Overdue": RED
+    }.get(s, GREY)
+
+
+def avatar_color(initials):
+    colors = [RED, GREEN, NAVY_SOFT, "#7C3AED", "#0891B2", "#059669"]
+    return colors[sum(ord(c) for c in initials) % len(colors)]
+
+
+# ══════════════════════════════════════════════════════
+# SIDEBAR
+# ══════════════════════════════════════════════════════
 with st.sidebar:
-    st.markdown("""
-    <div style='padding:10px 0 20px 0; border-bottom: 1px solid #334; margin-bottom:20px;'>
-      <div style='font-size:1.4rem; font-weight:800; color:#CC0000; letter-spacing:1px;'>TAFE</div>
-      <div style='font-size:0.78rem; color:#aaa; margin-top:2px;'>AI(ssist) Platform · L&D Edition</div>
+    st.markdown(f"""
+    <div style="padding: 24px 20px 20px;">
+      <div style="font-size:1.5rem; font-weight:900; color:{RED}; letter-spacing:2px;">TAFE</div>
+      <div style="font-size:0.72rem; color:#556; margin-top:2px; font-weight:500; letter-spacing:0.3px;">AI(ssist) · L&D Platform</div>
     </div>
+    <div style="height:1px; background:rgba(255,255,255,0.07); margin: 0 20px 20px;"></div>
+    <div style="padding: 0 12px; font-size:0.68rem; font-weight:700; color:#3A4A5A; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:10px;">Agents</div>
     """, unsafe_allow_html=True)
 
     agent = st.radio(
-        "Choose Agent",
-        [
-            "🎓 Learner Assistant + AI Coach",
-            "✏️ Instructional Designer Agent",
-            "📣 Learning Campaigner Agent",
-        ],
+        "agent",
+        ["🎓  Learner Assistant + AI Coach",
+         "✏️  Instructional Designer",
+         "📣  Learning Campaigner"],
         label_visibility="collapsed",
     )
 
-    st.markdown("<div style='margin-top:30px; font-size:0.72rem; color:#556; text-transform:uppercase; letter-spacing:1px;'>Platform</div>", unsafe_allow_html=True)
-    st.markdown("""
-    <div style='font-size:0.82rem; color:#99a; line-height:1.8;'>
-    ⚙️ Azure AI Foundry<br>
-    🔗 Moodle LMS (on-prem)<br>
-    👤 Entra ID (identity)<br>
-    💬 Microsoft Teams surface<br>
-    📊 Power BI analytics
+    st.markdown(f"""
+    <div style="height:1px; background:rgba(255,255,255,0.07); margin: 20px 20px;"></div>
+    <div style="padding: 0 20px;">
+      <div style="font-size:0.68rem; font-weight:700; color:#3A4A5A; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:12px;">Platform</div>
+      <div style="font-size:0.79rem; color:#6A7A8A; line-height:2.1;">
+        <span style="color:{GREEN}; font-size:0.6rem;">●</span>&nbsp; Azure AI Foundry<br>
+        <span style="color:{GREEN}; font-size:0.6rem;">●</span>&nbsp; Moodle LMS connector<br>
+        <span style="color:{GREEN}; font-size:0.6rem;">●</span>&nbsp; Entra ID guardrails<br>
+        <span style="color:{GREEN}; font-size:0.6rem;">●</span>&nbsp; R&D access controls<br>
+        <span style="color:#D97706; font-size:0.6rem;">●</span>&nbsp; Analytics (Phase 2)
+      </div>
+    </div>
+    <div style="position:absolute; bottom:24px; left:0; right:0; padding:0 20px;">
+      <div style="font-size:0.7rem; color:#3A4A5A; border-top:1px solid rgba(255,255,255,0.06); padding-top:14px; line-height:1.9;">
+        Powered by Saxon · Microsoft Azure<br>
+        AIssist V2 · <span style="color:{RED};">Prototype · May 2026</span>
+      </div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<div style='margin-top:30px; font-size:0.72rem; color:#556; text-transform:uppercase; letter-spacing:1px;'>Status</div>", unsafe_allow_html=True)
-    st.markdown("""
-    <div style='font-size:0.8rem; line-height:1.9;'>
-    <span style='color:#4CAF50;'>●</span> Moodle connector live<br>
-    <span style='color:#4CAF50;'>●</span> HR system synced<br>
-    <span style='color:#4CAF50;'>●</span> R&D guardrails active<br>
-    <span style='color:#FFA500;'>●</span> Analytics (Phase 2)
+
+# ══════════════════════════════════════════════════════
+# HELPERS
+# ══════════════════════════════════════════════════════
+def topbar(title, subtitle):
+    st.markdown(f"""
+    <div class="topbar">
+      <div class="topbar-brand">
+        <div class="topbar-logo">TAFE · AI(ssist)</div>
+        <div class="topbar-sub">{subtitle}</div>
+      </div>
+      <div class="topbar-divider"></div>
+      <div class="topbar-title">{title}</div>
+      <div class="topbar-badge">🌾 &nbsp;L&D Platform</div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown(f"""<div style='margin-top:40px; font-size:0.72rem; color:#445; border-top:1px solid #334; padding-top:12px;'>
-    Powered by Saxon · Microsoft Azure<br>Built on AIssist V2 platform<br><span style='color:{TAFE_RED};'>Prototype · May 2026</span>
-    </div>""", unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Top bar
-# ══════════════════════════════════════════════════════════════════════════════
+def sec_header(icon, label):
+    st.markdown(f'<div class="sec"><span>{icon}</span>{label}</div>', unsafe_allow_html=True)
 
-agent_titles = {
-    "🎓 Learner Assistant + AI Coach": ("Learner Assistant + AI Coach", "UC-4 · Strategic POC · Phase 1 Flagship"),
-    "✏️ Instructional Designer Agent": ("Instructional Designer Agent", "UC-1 · Quick Win · Phase 1"),
-    "📣 Learning Campaigner Agent": ("Learning Campaigner Agent", "UC-3 · Quick Win · Phase 1"),
-}
-title, subtitle = agent_titles[agent]
 
-st.markdown(f"""
-<div class="top-bar">
-  <div>
-    <div class="brand">TAFE · AI(ssist)</div>
-    <div class="sub">{subtitle}</div>
-  </div>
-  <div style='font-size:1.1rem; font-weight:700; color:white; margin-left:20px;'>{title}</div>
-  <div class="badge">🌾 L&D Platform</div>
-</div>
-""", unsafe_allow_html=True)
-
-# ══════════════════════════════════════════════════════════════════════════════
-# AGENT 1 — Learner Assistant + AI Coach
-# ══════════════════════════════════════════════════════════════════════════════
-
-if agent == "🎓 Learner Assistant + AI Coach":
-
-    # Role selector
-    col_role, col_learner, _ = st.columns([1.4, 2, 2])
-    with col_role:
-        role_view = st.selectbox("View as", ["Learner", "Manager", "Business Head / Leadership"])
-    with col_learner:
-        if role_view == "Learner":
-            selected_user = st.selectbox("Learner profile", [k for k in LEARNER_PROFILES if "Engineer" in k or "Venkat" in k])
-        elif role_view == "Manager":
-            selected_user = "Priya Venkat (Manager — Sales)"
+def render_chat(messages):
+    bubbles = ""
+    for role, text in messages:
+        text_safe = (text
+            .replace("**", "<b>", 1).replace("**", "</b>", 1)
+            .replace("**", "<b>", 1).replace("**", "</b>", 1)
+            .replace("**", "<b>", 1).replace("**", "</b>", 1)
+            .replace("**", "<b>", 1).replace("**", "</b>", 1)
+            .replace("**", "<b>", 1).replace("**", "</b>", 1)
+            .replace("\n\n", "<br><br>").replace("\n", "<br>"))
+        if role == "ai":
+            bubbles += f"""
+            <div class="bubble-ai">
+              <div class="bubble-ai-avatar">AI</div>
+              <div class="bubble-ai-content">
+                <div class="bubble-ai-label">TAFE AI Coach</div>
+                <div class="bubble-ai-text">{text_safe}</div>
+              </div>
+            </div>"""
         else:
-            selected_user = "Dr. Ramesh Iyer (President — R&D)"
+            bubbles += f'<div class="bubble-user"><div class="bubble-user-content">{text_safe}</div></div>'
+    st.markdown(f'<div class="chat-wrap">{bubbles}</div>', unsafe_allow_html=True)
 
-    profile = LEARNER_PROFILES[selected_user]
+
+# ══════════════════════════════════════════════════════
+# AGENT 1 — LEARNER ASSISTANT + AI COACH
+# ══════════════════════════════════════════════════════
+if "🎓" in agent:
+    topbar("Learner Assistant + AI Coach", "UC-4 · Strategic POC · Phase 1 Flagship")
+
+    rc1, rc2, _ = st.columns([1.2, 1.6, 1.5])
+    with rc1:
+        role_view = st.selectbox("View as", ["Learner", "Manager", "Business Head"])
+    with rc2:
+        if role_view == "Learner":
+            sel = st.selectbox("Learner", list(LEARNERS.keys()))
+        elif role_view == "Manager":
+            sel = "Priya Venkat — Manager, Sales"
+        else:
+            sel = None
+
     st.markdown("---")
 
-    # ── Learner view ──────────────────────────────────────────────────────────
+    # ── LEARNER VIEW ──────────────────────────────────
     if role_view == "Learner":
-        left, right = st.columns([1.1, 2])
+        p = LEARNERS[sel]
+        left, right = st.columns([1, 1.8])
 
         with left:
-            st.markdown('<div class="sec-header">My Learning Profile</div>', unsafe_allow_html=True)
-            st.markdown(f"""
-            <div class="agent-card">
-              <h3>{selected_user.split('(')[0].strip()}</h3>
-              <p>{profile['role']} · {profile['dept']} · {profile['level']}</p>
-              <p style='margin-top:8px;'>🎯 Career goal: <b>{profile['career_goal']}</b></p>
-            </div>
-            """, unsafe_allow_html=True)
-
-            mc1, mc2, mc3 = st.columns(3)
-            with mc1:
-                st.markdown(f'<div class="metric-tile"><div class="val">{profile["completed"]}</div><div class="lbl">Completed</div></div>', unsafe_allow_html=True)
-            with mc2:
-                st.markdown(f'<div class="metric-tile"><div class="val">{profile["in_progress"]}</div><div class="lbl">In Progress</div></div>', unsafe_allow_html=True)
-            with mc3:
-                color = "red" if profile["overdue"] > 0 else TAFE_GREEN
-                st.markdown(f'<div class="metric-tile"><div class="val" style="color:{color}">{profile["overdue"]}</div><div class="lbl">Overdue</div></div>', unsafe_allow_html=True)
+            sec_header("👤", "My Learning Profile")
+            name_short = sel.split("—")[0].strip()
 
             st.markdown(f"""
-            <div style='background:white; border-radius:10px; padding:14px 18px; margin-top:14px; box-shadow:0 1px 4px rgba(0,0,0,0.06);'>
-              <div style='font-size:0.8rem; color:#888; margin-bottom:6px;'>Completion Rate</div>
-              <div style='background:#eee; border-radius:20px; height:10px;'>
-                <div style='background:{TAFE_GREEN}; width:{profile["completion_rate"]}%; height:10px; border-radius:20px;'></div>
+            <div class="profile-card">
+              <div style="display:flex; align-items:center; gap:14px; margin-bottom:12px;">
+                <div class="profile-avatar">{p['initials']}</div>
+                <div>
+                  <div class="profile-name">{name_short}</div>
+                  <div class="profile-role">{p['role']} · {p['dept']} · {p['level']}</div>
+                </div>
               </div>
-              <div style='font-size:0.85rem; font-weight:700; color:{TAFE_NAVY}; margin-top:6px;'>{profile["completion_rate"]}% · {profile["hours_ytd"]}h YTD</div>
+              <div class="profile-goal">🎯 &nbsp;Target role: <b>{p['career_goal']}</b></div>
             </div>
             """, unsafe_allow_html=True)
 
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown('<div style="font-size:0.82rem; color:#888; margin-bottom:6px;">Current Skills</div>', unsafe_allow_html=True)
-            pills = " ".join([f'<span class="pill pill-green">{s}</span>' for s in profile["skills"]])
-            st.markdown(pills, unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="metric-row">
+              <div class="metric">
+                <div class="metric-val success">{p['completed']}</div>
+                <div class="metric-lbl">Completed</div>
+              </div>
+              <div class="metric">
+                <div class="metric-val">{p['in_progress']}</div>
+                <div class="metric-lbl">In Progress</div>
+              </div>
+              <div class="metric">
+                <div class="metric-val {'danger' if p['overdue'] > 0 else 'success'}">{p['overdue']}</div>
+                <div class="metric-lbl">Overdue</div>
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown('<div style="font-size:0.82rem; color:#888; margin-bottom:6px;">Skill Gaps</div>', unsafe_allow_html=True)
-            pills_gap = " ".join([f'<span class="pill pill-red">{s}</span>' for s in profile["gaps"]])
-            st.markdown(pills_gap, unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="progress-panel">
+              <div class="progress-label">Course Completion · YTD</div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width:{p['completion_rate']}%;"></div>
+              </div>
+              <div class="progress-val">{p['completion_rate']}% &nbsp;·&nbsp; {p['hours_ytd']}h logged</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            sec_header("✅", "Current Skills")
+            pills = "".join([f'<span class="pill pill-green">✓ {s}</span>' for s in p["skills"]])
+            st.markdown(f'<div class="pill-row" style="margin-bottom:16px;">{pills}</div>', unsafe_allow_html=True)
+
+            sec_header("🎯", "Skill Gaps")
+            pills_g = "".join([f'<span class="pill pill-red">↑ {s}</span>' for s in p["gaps"]])
+            st.markdown(f'<div class="pill-row">{pills_g}</div>', unsafe_allow_html=True)
 
         with right:
-            st.markdown('<div class="sec-header">AI Learning Coach</div>', unsafe_allow_html=True)
+            sec_header("🤖", "AI Learning Coach")
 
-            # Chat history
-            if "lc_chat" not in st.session_state:
-                name_short = selected_user.split(" ")[0]
-                st.session_state.lc_chat = [
-                    ("ai", f"Hi {name_short}! 👋 I'm your TAFE Learning Coach. I can see you have **{profile['overdue']} overdue module** and your completion rate is at **{profile['completion_rate']}%** this quarter. Here's what I'd suggest tackling first — want me to walk you through your top recommendations?"),
+            key = f"lc_{sel}"
+            if key not in st.session_state:
+                first_name = name_short.split()[0]
+                st.session_state[key] = [
+                    ("ai", f"Hi {first_name}! 👋 I'm your TAFE Learning Coach. I can see you have **{p['overdue']} overdue module** and your completion rate is **{p['completion_rate']}%** this quarter.\n\nHere's what I'd suggest tackling first — want me to walk you through your top recommendations?")
                 ]
 
-            for role_msg, msg in st.session_state.lc_chat:
-                if role_msg == "user":
-                    st.markdown(f'<div class="chat-user">{msg}</div>', unsafe_allow_html=True)
-                else:
-                    st.markdown(f'<div class="chat-ai"><div class="ai-label">🤖 TAFE AI Coach</div>{msg}</div>', unsafe_allow_html=True)
+            render_chat(st.session_state[key])
 
             # Quick prompts
-            st.markdown("<br>", unsafe_allow_html=True)
-            qp_cols = st.columns(3)
-            quick_prompts = [
-                "Show my recommendations",
-                "What's overdue?",
-                "Help me build a learning plan",
+            qc1, qc2, qc3 = st.columns(3)
+            prompts = [
+                ("Show recommendations", qc1),
+                ("What's overdue?",       qc2),
+                ("Build my learning plan", qc3),
             ]
-            for i, qp in enumerate(quick_prompts):
-                if qp_cols[i].button(qp, use_container_width=True):
-                    st.session_state.lc_chat.append(("user", qp))
-                    name_short = selected_user.split(" ")[0]
-                    if "recommend" in qp.lower():
-                        recs = profile["recommended"]
-                        rec_html = "".join([f"<br>**{i+1}. {r[0]}** <span style='color:#888; font-size:0.82rem;'>({r[1]} · {r[2]})</span>" for i, r in enumerate(recs)])
-                        reply = f"Here are your top 3 recommended courses, personalised to your role and skill gaps:{rec_html}<br><br>Would you like to start the first one now?"
-                    elif "overdue" in qp.lower():
-                        reply = f"You have **1 overdue module**: *{profile['gaps'][0]}*. It was due 12 days ago. I'd recommend completing it this week — I can send you a reminder at a time that suits you. Want me to block 2 hours in your Teams calendar?"
+            for label, col in prompts:
+                if col.button(label, use_container_width=True, key=f"qp_{label}_{sel}"):
+                    first_name = name_short.split()[0]
+                    st.session_state[key].append(("user", label))
+                    if "recommend" in label.lower():
+                        recs = p["recommended"]
+                        rec_lines = "\n".join([f"**{i+1}. {r[0]}** — {r[1]} · {r[2]}" for i, r in enumerate(recs)])
+                        reply = f"Here are your top 3 personalised recommendations, based on your role and skill gaps:\n\n{rec_lines}\n\nWould you like to enrol in the first one?"
+                    elif "overdue" in label.lower():
+                        reply = f"You have **1 overdue module**: **{p['gaps'][0]}**. It was due 12 days ago.\n\nI can block 2 hours in your Teams calendar this week to clear it. Want me to do that?"
                     else:
-                        reply = f"Great idea, {name_short}! Based on your goal to become a **{profile['career_goal']}**, here's a suggested 90-day learning sprint:\n\n**Month 1:** Clear your overdue module + complete 2 foundational courses.\n**Month 2:** Tackle your top skill gap — {profile['gaps'][-1]}.\n**Month 3:** One stretch course aligned to your next role.\n\nShall I add these to your Moodle learning path?"
-                    st.session_state.lc_chat.append(("ai", reply))
+                        reply = f"Great idea, {first_name}! Based on your goal of becoming a **{p['career_goal']}**, here's a 90-day sprint:\n\n**Month 1:** Clear your overdue module + 2 foundational courses.\n**Month 2:** Tackle your top gap — **{p['gaps'][-1]}**.\n**Month 3:** One stretch course aligned to your next role.\n\nShall I add these to your Moodle learning path?"
+                    st.session_state[key].append(("ai", reply))
                     st.rerun()
 
-            user_input = st.text_input("Ask your AI Coach anything…", placeholder="e.g. Which course should I do next?", key="lc_input")
-            if st.button("Send →", key="lc_send") and user_input:
-                st.session_state.lc_chat.append(("user", user_input))
-                name_short = selected_user.split(" ")[0]
-                reply = f"Great question, {name_short}! Based on your profile and current learning history, I'd recommend starting with **{profile['recommended'][0][0]}** — it directly addresses your skill gap in **{profile['gaps'][-1]}** and is aligned with your goal of becoming a {profile['career_goal']}. It's only {profile['recommended'][0][2]} long. Want me to enroll you?"
-                st.session_state.lc_chat.append(("ai", reply))
+            user_q = st.text_input("Ask your AI Coach anything…", placeholder="Which course should I do next?", key=f"li_{sel}")
+            if st.button("Send", key=f"ls_{sel}") and user_q:
+                first_name = name_short.split()[0]
+                st.session_state[key].append(("user", user_q))
+                reply = f"Based on your profile, I'd recommend starting with **{p['recommended'][0][0]}** — it directly addresses your gap in **{p['gaps'][-1]}** and is only {p['recommended'][0][2]} long. Want me to enrol you?"
+                st.session_state[key].append(("ai", reply))
                 st.rerun()
 
-            st.markdown('<div style="font-size:0.78rem; color:#aaa; margin-top:8px;">AI Coach is grounded in your Moodle records · All recommendations cite source data · Human review on all enrollments</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="info-footer">All recommendations grounded in your Moodle records · Source citations included · Human review on all enrolments · Audit trail active</div>', unsafe_allow_html=True)
 
-    # ── Manager view ──────────────────────────────────────────────────────────
+    # ── MANAGER VIEW ──────────────────────────────────
     elif role_view == "Manager":
-        st.markdown('<div class="sec-header">Team Learning Dashboard — Priya Venkat · Sales (12 Reports)</div>', unsafe_allow_html=True)
+        p = LEARNERS["Priya Venkat — Manager, Sales"]
+        sec_header("📊", "Team Dashboard — Priya Venkat · Sales · 12 Direct Reports")
 
         m1, m2, m3, m4 = st.columns(4)
-        metrics = [
-            ("68%", "Team Completion Rate", "▲ 9% vs. last quarter"),
-            ("8", "Overdue (team)", "2 critical — action needed"),
-            ("3", "On Track for Goals", "of 12 team members"),
-            ("47h", "Avg Hours YTD", "▲ 6h vs. last quarter"),
-        ]
-        for col, (val, lbl, delta) in zip([m1, m2, m3, m4], metrics):
-            col.markdown(f'<div class="metric-tile"><div class="val">{val}</div><div class="lbl">{lbl}</div><div class="delta">{delta}</div></div>', unsafe_allow_html=True)
+        for col, val, lbl, delta, dcolor in [
+            (m1, "68%",  "Team Completion",     "▲ 9% vs. last quarter", GREEN),
+            (m2, "8",    "Overdue (team)",       "2 critical — act now",  RED),
+            (m3, "47h",  "Avg Hours YTD",        "▲ 6h vs. last quarter", GREEN),
+            (m4, "3/12", "On Track for Goals",   "review recommended",    GOLD),
+        ]:
+            col.markdown(f"""
+            <div class="metric" style="border-top: 3px solid {dcolor}; padding: 16px 12px;">
+              <div class="metric-val" style="color:{dcolor};">{val}</div>
+              <div class="metric-lbl">{lbl}</div>
+              <div style="font-size:0.72rem; color:{dcolor}; font-weight:600; margin-top:3px;">{delta}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        left, right = st.columns(2)
+        tl, tr = st.columns([1.1, 1.4])
 
-        with left:
-            st.markdown('<div class="sec-header">Team Members — Completion Status</div>', unsafe_allow_html=True)
-            team = [
-                ("Suresh Kumar", "Sales Exec", 92, "On Track", TAFE_GREEN),
-                ("Meena Raj", "Sales Exec", 78, "On Track", TAFE_GREEN),
-                ("Anand P.", "Area Manager", 65, "At Risk", "#FFA500"),
-                ("Divya S.", "Sales Exec", 55, "At Risk", "#FFA500"),
-                ("Karthik M.", "Key Accounts", 30, "Overdue", TAFE_RED),
-                ("Raj Patel", "Sales Exec", 82, "On Track", TAFE_GREEN),
-            ]
-            for name, role_t, pct, status, color in team:
+        with tl:
+            sec_header("👥", "Team Members")
+            for name, initials, role_t, pct, status in TEAM_MEMBERS:
+                sc = status_color(status)
+                ac = avatar_color(initials)
                 st.markdown(f"""
-                <div style='background:white; border-radius:8px; padding:10px 14px; margin-bottom:8px; display:flex; align-items:center; gap:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05);'>
-                  <div style='flex:1;'>
-                    <div style='font-weight:600; font-size:0.88rem; color:{TAFE_NAVY};'>{name} <span style='font-weight:400; color:#888;'>· {role_t}</span></div>
-                    <div style='background:#eee; border-radius:20px; height:6px; margin-top:5px;'>
-                      <div style='background:{color}; width:{pct}%; height:6px; border-radius:20px;'></div>
+                <div class="team-row">
+                  <div class="team-avatar" style="background:{ac};">{initials}</div>
+                  <div style="flex:1; min-width:0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <div class="team-name">{name}</div>
+                      <span class="pill" style="background:{sc}18; color:{sc}; font-size:0.7rem;">{status}</span>
+                    </div>
+                    <div class="team-role">{role_t}</div>
+                    <div class="team-bar-track">
+                      <div class="team-bar-fill" style="width:{pct}%; background:{sc};"></div>
                     </div>
                   </div>
-                  <div style='font-size:0.82rem; font-weight:700; color:{color}; min-width:70px; text-align:right;'>{pct}% · {status}</div>
+                  <div style="font-size:0.85rem; font-weight:700; color:{sc}; min-width:32px; text-align:right;">{pct}%</div>
                 </div>
                 """, unsafe_allow_html=True)
 
-        with right:
-            st.markdown('<div class="sec-header">AI Manager Coach</div>', unsafe_allow_html=True)
+        with tr:
+            sec_header("🤖", "Manager AI Coach")
             if "mc_chat" not in st.session_state:
-                st.session_state.mc_chat = [
-                    ("ai", "Hi Priya! Your team's overall completion is **68%** — up 9 points from last quarter. 🎉 However, **Karthik M.** is critically overdue on 3 mandatory courses. I can draft a personalised nudge to him, or escalate to HR if needed. What would you like to do?"),
-                ]
-            for role_msg, msg in st.session_state.mc_chat:
-                if role_msg == "user":
-                    st.markdown(f'<div class="chat-user">{msg}</div>', unsafe_allow_html=True)
-                else:
-                    st.markdown(f'<div class="chat-ai"><div class="ai-label">🤖 TAFE Manager Coach</div>{msg}</div>', unsafe_allow_html=True)
+                st.session_state.mc_chat = [("ai", "Hi Priya! Your team's completion is **68%** — up 9 points this quarter. 🎉\n\nHowever, **Karthik M.** is critically overdue on 3 mandatory modules. I can draft a personalised nudge to him, or escalate to HR. What would you like to do?")]
+            render_chat(st.session_state.mc_chat)
 
-            if st.button("Send nudge to Karthik", key="nudge_karthik"):
+            nc1, nc2 = st.columns(2)
+            if nc1.button("Nudge Karthik", use_container_width=True):
                 st.session_state.mc_chat.append(("user", "Send nudge to Karthik"))
-                st.session_state.mc_chat.append(("ai", "Done! ✅ A personalised Teams message has been queued for Karthik M.: *'Hi Karthik — I noticed you have 3 overdue modules including Safety Compliance (mandatory). I've cleared a 2-hour slot in your calendar this Thursday. Let's get these done — I'm here if you need support. — Priya'*. He'll receive it at 9 AM tomorrow. I'll notify you when he completes."))
+                st.session_state.mc_chat.append(("ai", "Done! ✅ A personalised Teams message is queued for Karthik at 9 AM tomorrow:\n\n*'Hi Karthik — I've noticed 3 overdue modules including Safety Compliance. I've cleared 2 hours in your calendar this Thursday. Let's get these done — Priya'*\n\nI'll notify you when he completes."))
+                st.rerun()
+            if nc2.button("Full team report", use_container_width=True):
+                st.session_state.mc_chat.append(("user", "Give me the full team report"))
+                st.session_state.mc_chat.append(("ai", "**Team Summary — Sales · Q2 FY26**\n\nOn Track (≥75%): Suresh, Meena, Raj — 3 of 12\nAt Risk (50–74%): Anand, Divya — need 1:1 check-in\nCritical (<50%): Karthik — mandatory escalation recommended\n\nTop gap across team: **AI for Sales Leaders** — 9 of 12 not yet enrolled."))
                 st.rerun()
 
-            mi = st.text_input("Ask about your team…", placeholder="Who needs my attention most?", key="mc_input")
-            if st.button("Ask →", key="mc_send") and mi:
+            mi = st.text_input("Ask about your team…", placeholder="Who needs my attention most?", key="mc_in")
+            if st.button("Ask", key="mc_send") and mi:
                 st.session_state.mc_chat.append(("user", mi))
-                st.session_state.mc_chat.append(("ai", "Based on completion rates and overdue status, **Karthik M.** and **Divya S.** need the most immediate attention. Karthik has 3 overdue mandatory modules; Divya's at-risk on 2. I'd suggest a 1:1 check-in with both this week alongside the automated nudge I've already queued."))
+                st.session_state.mc_chat.append(("ai", "**Karthik M.** and **Divya S.** need the most attention. Karthik has 3 overdue mandatory modules (30% completion). Divya is at risk with 55% — trending down. I'd suggest 1:1 check-ins with both alongside the automated nudge already queued for Karthik."))
                 st.rerun()
 
-    # ── Leadership view ───────────────────────────────────────────────────────
+    # ── LEADERSHIP VIEW ───────────────────────────────
     else:
-        st.markdown('<div class="sec-header">Business Impact Dashboard — R&D Function (240 Employees)</div>', unsafe_allow_html=True)
-        st.markdown('<span class="pill pill-red">🔒 R&D Confidential Access</span>', unsafe_allow_html=True)
+        sec_header("🏢", "Executive Analytics — Organisation · 4,200 Employees")
+        st.markdown('<span class="pill pill-red">🔒 Leadership Access</span>&nbsp;<span class="pill pill-gold">⚡ R&D Confidential Gated</span>', unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
 
-        m1, m2, m3, m4 = st.columns(4)
-        for col, (val, lbl, delta) in zip([m1, m2, m3, m4], [
-            ("54%", "Org Completion", "▲ 11% vs. H1"),
-            ("6,840h", "Learning Hours YTD", "org-wide"),
-            ("3", "Critical Gaps", "safety compliance"),
-            ("92%", "NPI Readiness", "DIVA Pro launch"),
-        ]):
-            col.markdown(f'<div class="metric-tile"><div class="val">{val}</div><div class="lbl">{lbl}</div><div class="delta">{delta}</div></div>', unsafe_allow_html=True)
+        e1, e2, e3, e4 = st.columns(4)
+        for col, val, lbl, delta, dc in [
+            (e1, "54%",    "Org Completion",       "▲ 11% vs. H1",      GREEN),
+            (e2, "6,840h", "Learning Hours YTD",   "across all functions", NAVY),
+            (e3, "3",      "Critical Gaps",         "safety compliance",  RED),
+            (e4, "92%",    "NPI Readiness",         "DIVA Pro launch",    GOLD),
+        ]:
+            col.markdown(f"""
+            <div class="metric" style="border-top:3px solid {dc}; padding:16px 12px;">
+              <div class="metric-val" style="color:{dc};">{val}</div>
+              <div class="metric-lbl">{lbl}</div>
+              <div style="font-size:0.72rem; color:{dc}; font-weight:600; margin-top:3px;">{delta}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        left2, right2 = st.columns([1.5, 1])
-        with left2:
-            st.markdown('<div class="sec-header">Conversational Analytics</div>', unsafe_allow_html=True)
-            if "exec_chat" not in st.session_state:
-                st.session_state.exec_chat = [
-                    ("ai", "Good morning, Dr. Iyer! Your R&D function's learning adoption is at **54%** — 11 points up from H1. **NPI readiness for DIVA Pro stands at 92%**, with 8 engineers yet to complete the product certification. Would you like a breakdown by sub-team, or an action plan for the remaining 8?"),
-                ]
-            for role_msg, msg in st.session_state.exec_chat:
-                if role_msg == "user":
-                    st.markdown(f'<div class="chat-user">{msg}</div>', unsafe_allow_html=True)
-                else:
-                    st.markdown(f'<div class="chat-ai"><div class="ai-label">🤖 TAFE Executive Analytics</div>{msg}</div>', unsafe_allow_html=True)
+        el, er = st.columns([1.6, 1])
 
-            eq_cols = st.columns(3)
-            exec_qs = ["Who are my best learners?", "Which teams have gaps?", "NPI readiness report"]
-            for i, eq in enumerate(exec_qs):
-                if eq_cols[i].button(eq, key=f"eq_{i}"):
-                    st.session_state.exec_chat.append(("user", eq))
-                    if "best" in eq.lower():
-                        reply = "Your top 5 learners this quarter by hours and completion rate: **Arun T.** (98%, 42h), **Sneha G.** (96%, 38h), **Vikram N.** (94%, 35h), **Preethi A.** (92%, 33h), **Mohan R.** (90%, 31h). All 5 are in the Advanced Engineering sub-team. Their average completion is 12 points above org average."
-                    elif "gap" in eq.lower():
-                        reply = "3 sub-teams show significant learning gaps: **Field Testing** (38% completion — safety modules critical), **Electronics & Embedded** (44% completion — new product cert at risk), **Prototyping** (52% — manageable). I'd recommend a targeted sprint campaign for Field Testing this month."
-                    else:
-                        reply = "**DIVA Pro NPI Readiness: 92%** (220 of 240 engineers certified). 8 remaining engineers are in the Field Testing team — all have been nudged. At current pace, 100% certification expected by June 28. Risk: LOW. No launch readiness concerns."
-                    st.session_state.exec_chat.append(("ai", reply))
+        with el:
+            sec_header("💬", "Conversational Analytics")
+            if "ec_chat" not in st.session_state:
+                st.session_state.ec_chat = [("ai", "Good morning! Your organisation's learning adoption is at **54%** — 11 points up from H1.\n\n**NPI readiness for DIVA Pro: 92%** — 8 engineers yet to complete product certification.\n\nWould you like a breakdown by function, or an action plan for the remaining 8?")]
+            render_chat(st.session_state.ec_chat)
+
+            eq1, eq2, eq3 = st.columns(3)
+            for label, col, resp in [
+                ("Best learners", eq1, "Your top 5 learners this quarter:\n\n**Arun T.** — 98% · 42h\n**Sneha G.** — 96% · 38h\n**Vikram N.** — 94% · 35h\n**Preethi A.** — 92% · 33h\n**Mohan R.** — 90% · 31h\n\nAll 5 are in Advanced Engineering — 12 points above org average."),
+                ("Function gaps",  eq2, "3 functions show critical learning gaps:\n\n**Field Testing** — 38% (safety modules overdue)\n**Electronics & Embedded** — 44% (NPI cert at risk)\n**Prototyping** — 52% (manageable)\n\nRecommend a targeted sprint for Field Testing this month."),
+                ("NPI readiness",  eq3, "**DIVA Pro NPI Readiness: 92%**\n220 of 240 R&D engineers certified. 8 remaining engineers are in Field Testing — all have been nudged.\n\nProjected 100% by June 28. **Risk: LOW.** No launch readiness concerns."),
+            ]:
+                if col.button(label, use_container_width=True, key=f"eq_{label}"):
+                    st.session_state.ec_chat.append(("user", label))
+                    st.session_state.ec_chat.append(("ai", resp))
                     st.rerun()
 
-            ex_input = st.text_input("Ask the analytics engine…", placeholder="How much capability learning has R&D done this quarter?", key="exec_input")
-            if st.button("Query →", key="exec_send") and ex_input:
-                st.session_state.exec_chat.append(("user", ex_input))
-                st.session_state.exec_chat.append(("ai", f"Analysing R&D learning data… Your function completed **{random.randint(1200,1800)} capability learning hours** this quarter — a **{random.randint(10,20)}% increase** vs. Q4 FY25. Top capability areas: Product Engineering (840h), Safety (320h), Leadership (210h). Trending up: AI & Digital Tools (+68% YoY)."))
+            ex = st.text_input("Query the analytics engine…", placeholder="How much capability learning has R&D done this quarter?", key="ex_in")
+            if st.button("Query", key="ex_send") and ex:
+                st.session_state.ec_chat.append(("user", ex))
+                h = random.randint(1200, 1800)
+                up = random.randint(10, 20)
+                st.session_state.ec_chat.append(("ai", f"R&D completed **{h:,} capability learning hours** this quarter — a **{up}% increase** vs. Q4 FY25.\n\nTop areas: Product Engineering (840h), Safety (320h), Leadership (210h).\nTrending up: AI & Digital Tools **+68% YoY**."))
                 st.rerun()
 
-        with right2:
-            st.markdown('<div class="sec-header">Function Heatmap</div>', unsafe_allow_html=True)
-            teams = [("Advanced Engineering", 88), ("Electronics & Embedded", 44), ("Field Testing", 38), ("Prototyping", 52), ("R&D Management", 91), ("Quality Assurance", 77)]
-            for team_n, pct in teams:
-                color = TAFE_GREEN if pct >= 75 else ("#FFA500" if pct >= 50 else TAFE_RED)
+        with er:
+            sec_header("🗺️", "Function Heatmap")
+            hm = [
+                ("Advanced Engineering",      88),
+                ("R&D Management",            91),
+                ("Quality Assurance",         77),
+                ("Prototyping",               52),
+                ("Electronics & Embedded",    44),
+                ("Field Testing",             38),
+            ]
+            for name, pct in hm:
+                c = GREEN if pct >= 75 else ("#D97706" if pct >= 50 else RED)
                 st.markdown(f"""
-                <div style='background:white; border-radius:8px; padding:9px 14px; margin-bottom:7px; box-shadow:0 1px 3px rgba(0,0,0,0.05);'>
-                  <div style='display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;'>
-                    <span style='color:{TAFE_NAVY}; font-weight:600;'>{team_n}</span>
-                    <span style='color:{color}; font-weight:700;'>{pct}%</span>
+                <div class="hm-row">
+                  <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <div class="hm-name">{name}</div>
+                    <div class="hm-pct" style="color:{c};">{pct}%</div>
                   </div>
-                  <div style='background:#eee; border-radius:20px; height:6px;'>
-                    <div style='background:{color}; width:{pct}%; height:6px; border-radius:20px;'></div>
+                  <div class="team-bar-track">
+                    <div class="team-bar-fill" style="width:{pct}%; background:linear-gradient(90deg, {c}99, {c});"></div>
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════════════════════════════
-# AGENT 2 — Instructional Designer Agent
-# ══════════════════════════════════════════════════════════════════════════════
 
-elif agent == "✏️ Instructional Designer Agent":
+# ══════════════════════════════════════════════════════
+# AGENT 2 — INSTRUCTIONAL DESIGNER
+# ══════════════════════════════════════════════════════
+elif "✏️" in agent:
+    topbar("Instructional Designer Agent", "UC-1 · Quick Win · Phase 1 · Fills the role gap")
 
-    col_sel, col_info = st.columns([1.5, 2.5])
-    with col_sel:
-        st.markdown('<div class="sec-header">Content Brief</div>', unsafe_allow_html=True)
-
-        mode = st.radio("Mode", ["Use existing brief", "Enter new brief"], horizontal=True)
-
-        if mode == "Use existing brief":
-            brief_key = st.selectbox("Select brief", list(STORYBOARD_MODULES.keys()))
-            brief_data = STORYBOARD_MODULES[brief_key]
-            st.markdown(f"""
-            <div class="agent-card" style="margin-top:12px;">
-              <h3>Brief Details</h3>
-              <p>👥 Audience: {brief_data['audience']}</p>
-              <p>⏱ Duration: {brief_data['duration']}</p>
-              <p>📦 Format: {brief_data['format']}</p>
-            </div>
-            """, unsafe_allow_html=True)
+    bc1, bc2 = st.columns([1.2, 2.4])
+    with bc1:
+        sec_header("📋", "Content Brief")
+        mode = st.radio("Input mode", ["Existing brief", "New brief"], horizontal=True, label_visibility="collapsed")
+        if mode == "Existing brief":
+            brief_key = st.selectbox("Select brief", list(BRIEFS.keys()))
         else:
-            brief_key = st.text_input("Module title", placeholder="e.g. Tractor Hydraulics for Dealers")
-            st.text_area("Subject matter / content brief", placeholder="Paste SME notes, product specs, or a content outline here...", height=120)
-            st.selectbox("Target audience", ["Engineers", "Dealers", "All employees", "Managers", "New joiners"])
-            st.selectbox("Module format", ["SCORM e-learning", "Video + Quiz", "Microlearning (mobile)", "PDF job aid"])
-            brief_data = STORYBOARD_MODULES[list(STORYBOARD_MODULES.keys())[0]]
-            brief_key = list(STORYBOARD_MODULES.keys())[0]
+            brief_key = list(BRIEFS.keys())[0]
+            st.text_input("Module title", placeholder="e.g. Tractor Hydraulics for Dealers")
+            st.text_area("Subject matter / SME notes", placeholder="Paste content outline or product specs…", height=100)
+            st.selectbox("Target audience", ["Engineers", "Dealers", "All employees", "Managers"])
+            st.selectbox("Format", ["SCORM e-learning", "Video + Quiz", "Microlearning", "PDF job aid"])
 
-        generate = st.button("🪄 Generate Storyboard", type="primary", use_container_width=True)
-
-    with col_info:
-        st.markdown('<div class="sec-header">Learning Objectives</div>', unsafe_allow_html=True)
-        for obj in brief_data["objectives"]:
-            st.markdown(f"<div style='font-size:0.88rem; color:#333; padding:6px 0; border-bottom:1px solid #eee;'>✅ {obj}</div>", unsafe_allow_html=True)
-
-        if brief_data.get("wcag_flags"):
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown('<div class="sec-header">♿ Accessibility Flags</div>', unsafe_allow_html=True)
-            for flag in brief_data["wcag_flags"]:
-                st.markdown(f"<div style='font-size:0.85rem; color:{TAFE_RED}; padding:4px 0;'>⚠️ {flag}</div>", unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown(f'<div class="agent-card"><h3>💡 ID Agent Note</h3><p>{brief_data["id_notes"]}</p></div>', unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    if generate or "id_generated" in st.session_state:
-        st.session_state.id_generated = True
-        st.markdown(f'<div class="sec-header">Generated Storyboard — {brief_key}</div>', unsafe_allow_html=True)
-
-        progress_bar = st.progress(0, text="Instructional Designer Agent thinking…")
-        for i in range(100):
-            time.sleep(0.005)
-            progress_bar.progress(i + 1, text=f"Generating storyboard… {i+1}%")
-        progress_bar.empty()
-
-        for mod in brief_data["modules"]:
-            seq_color = TAFE_RED if mod["seq"] == "01" else (TAFE_GREEN if mod["seq"] == "05" else TAFE_NAVY)
-            st.markdown(f"""
-            <div class="storyboard">
-              <div style='display:flex; align-items:center; gap:12px; margin-bottom:8px;'>
-                <div style='background:{seq_color}; color:white; border-radius:6px; padding:3px 10px; font-size:0.78rem; font-weight:700;'>
-                  Module {mod['seq']}
-                </div>
-                <h4 style='margin:0; color:{TAFE_NAVY};'>{mod['title']}</h4>
-                <span class='pill' style='margin-left:auto;'>{mod['type']}</span>
-                <span class='pill'>{mod['duration']}</span>
-              </div>
-              <p><b>Narration / Interaction design:</b> {mod['narration']}</p>
-              <p style='margin-top:6px; font-size:0.82rem; color:#888;'>📎 Assets required: {mod['assets']}</p>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("---")
-        st.markdown('<div class="sec-header">QA Pre-Check — Before Handoff to Media Team</div>', unsafe_allow_html=True)
-
-        pass_count = sum(1 for _, _, passed in QA_CHECKLIST_ITEMS if passed)
-        fail_count = len(QA_CHECKLIST_ITEMS) - pass_count
+        b = BRIEFS[brief_key]
         st.markdown(f"""
-        <div style='background:white; border-radius:10px; padding:14px 20px; margin-bottom:16px; display:flex; gap:30px; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,0.05);'>
-          <div><span style='font-size:1.5rem; font-weight:800; color:{TAFE_GREEN};'>{pass_count}</span> <span style='font-size:0.85rem; color:#666;'>checks passed</span></div>
-          <div><span style='font-size:1.5rem; font-weight:800; color:{TAFE_RED};'>{fail_count}</span> <span style='font-size:0.85rem; color:#666;'>need attention</span></div>
-          <div style='font-size:0.82rem; color:#888;'>Human review required before authoring sign-off</div>
+        <div class="profile-card" style="margin-top:14px;">
+          <div style="font-size:0.75rem; font-weight:700; color:{TEXT_LITE}; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Brief Details</div>
+          <div style="font-size:0.84rem; color:{TEXT_DARK}; line-height:2.1;">
+            👥 &nbsp;<b>Audience:</b> {b['audience']}<br>
+            ⏱ &nbsp;<b>Duration:</b> {b['duration']}<br>
+            📦 &nbsp;<b>Format:</b> {b['format']}
+          </div>
         </div>
         """, unsafe_allow_html=True)
 
-        categories = {}
-        for cat, item, passed in QA_CHECKLIST_ITEMS:
-            categories.setdefault(cat, []).append((item, passed))
+        generate = st.button("🪄  Generate Storyboard", type="primary", use_container_width=True)
 
-        qa_cols = st.columns(2)
-        for i, (cat, items) in enumerate(categories.items()):
-            with qa_cols[i % 2]:
-                st.markdown(f'<div style="font-size:0.82rem; font-weight:700; color:{TAFE_NAVY}; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">{cat}</div>', unsafe_allow_html=True)
-                for item, passed in items:
-                    icon = "✅" if passed else "❌"
-                    color = "#333" if passed else TAFE_RED
-                    st.markdown(f'<div style="font-size:0.84rem; color:{color}; padding:4px 0; border-bottom:1px solid #f0f0f0;">{icon} {item}</div>', unsafe_allow_html=True)
-                st.markdown("<br>", unsafe_allow_html=True)
+    with bc2:
+        sec_header("🎯", "Learning Objectives")
+        for obj in b["objectives"]:
+            st.markdown(f"""
+            <div style="display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid #EEF0F4; font-size:0.86rem; color:{TEXT_DARK};">
+              <span style="color:{GREEN}; font-weight:700; flex-shrink:0;">✓</span>
+              <span>{obj}</span>
+            </div>
+            """, unsafe_allow_html=True)
 
-        st.success("✅ Storyboard generated. Ready for content team review before authoring begins. All outputs logged to SharePoint with model version, timestamp, and prompt ID.")
-
-# ══════════════════════════════════════════════════════════════════════════════
-# AGENT 3 — Learning Campaigner Agent
-# ══════════════════════════════════════════════════════════════════════════════
-
-elif agent == "📣 Learning Campaigner Agent":
-
-    left, right = st.columns([1.5, 2.5])
-
-    with left:
-        st.markdown('<div class="sec-header">Active Campaigns</div>', unsafe_allow_html=True)
-
-        selected_campaign = None
-        for camp in CAMPAIGN_EVENTS:
-            status_color = TAFE_GREEN if camp["status"] == "Active" else ("#FFA500" if camp["status"] == "Draft" else "#888")
-            if st.button(
-                f"{camp['name']} · {camp['status']}",
-                key=f"camp_{camp['name']}",
-                use_container_width=True,
-            ):
-                st.session_state.selected_camp = camp["name"]
-
-        if "selected_camp" not in st.session_state:
-            st.session_state.selected_camp = CAMPAIGN_EVENTS[0]["name"]
-
-        selected_campaign = next(c for c in CAMPAIGN_EVENTS if c["name"] == st.session_state.selected_camp)
+        if b["wcag"]:
+            st.markdown("<br>", unsafe_allow_html=True)
+            sec_header("♿", "Accessibility Requirements")
+            for flag in b["wcag"]:
+                st.markdown(f'<div style="font-size:0.84rem; color:{RED}; padding:5px 0;">⚠️ &nbsp;{flag}</div>', unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown('<div class="sec-header">Create New Campaign</div>', unsafe_allow_html=True)
-        new_name = st.text_input("Campaign name", placeholder="e.g. Safety Week Sprint")
-        new_trigger = st.selectbox("Trigger type", ["Date-based", "Birthday / Anniversary", "Completion milestone", "Manager-initiated", "Low engagement alert"])
-        new_audience = st.selectbox("Audience", ["All employees", "Specific department", "At-risk learners", "Top learners", "Specific role"])
-        if st.button("➕ Create Campaign", use_container_width=True):
-            st.success(f"Campaign '{new_name}' created as Draft. AI will generate personalised nudges based on learner profiles.")
+        st.markdown(f"""
+        <div class="profile-card" style="border-left:4px solid {GOLD};">
+          <div style="font-size:0.72rem; font-weight:700; color:{TEXT_LITE}; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">ID Agent Note</div>
+          <div style="font-size:0.84rem; color:{TEXT_MID}; line-height:1.6;">{b['notes']}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    with right:
-        if selected_campaign:
-            camp = selected_campaign
-            status_color = TAFE_GREEN if camp["status"] == "Active" else ("#FFA500" if camp["status"] == "Draft" else "#888")
+    st.markdown("---")
 
+    if generate or "id_done" in st.session_state:
+        st.session_state.id_done = True
+        sec_header("📄", f"Generated Storyboard — {brief_key}")
+
+        bar = st.progress(0, text="Instructional Designer Agent is working…")
+        for i in range(100):
+            time.sleep(0.004)
+            bar.progress(i + 1, text=f"Generating storyboard… {i+1}%")
+        bar.empty()
+
+        for mod in b["modules"]:
             st.markdown(f"""
-            <div class="campaign-card">
-              <div style='display:flex; align-items:center; gap:12px; margin-bottom:4px;'>
-                <h4 style='margin:0; font-size:1.05rem;'>{camp['name']}</h4>
-                <span style='background:{status_color}; color:white; border-radius:20px; padding:2px 12px; font-size:0.76rem; font-weight:700;'>{camp['status']}</span>
+            <div class="sb-card">
+              <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                <div class="sb-seq" style="background:{mod['color']};">{mod['seq']}</div>
+                <div style="flex:1;">
+                  <div class="sb-title">{mod['title']}</div>
+                  <div class="sb-type">{mod['type']}</div>
+                </div>
+                <span class="pill pill-slate">{mod.get('duration', '')}</span>
               </div>
-              <div style='font-size:0.83rem; color:#666; margin-bottom:4px;'>🔁 Trigger: {camp['trigger']} &nbsp;·&nbsp; 👥 Reach: {camp['reach']} &nbsp;·&nbsp; 💬 {camp['channel']}</div>
-              <div class='nudge-preview'>
-                <div style='font-size:0.75rem; color:#999; margin-bottom:6px; font-style:normal; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;'>Sample Personalised Nudge (auto-generated)</div>
-                {camp['nudge']}
-              </div>
+              <div class="sb-narration">{mod['narration']}</div>
+              <div class="sb-assets">📎 &nbsp;Assets: {mod['assets']}</div>
             </div>
             """, unsafe_allow_html=True)
 
-            if camp["status"] != "Draft":
-                st.markdown('<div class="sec-header">Campaign Performance</div>', unsafe_allow_html=True)
-                pm1, pm2, pm3 = st.columns(3)
-                pm1.markdown(f'<div class="metric-tile"><div class="val">{camp["sent_30d"]:,}</div><div class="lbl">Nudges Sent (30d)</div></div>', unsafe_allow_html=True)
-                pm2.markdown(f'<div class="metric-tile"><div class="val">{camp["open_rate"]}%</div><div class="lbl">Open Rate</div><div class="delta">Target: ≥50%</div></div>', unsafe_allow_html=True)
-                pm3.markdown(f'<div class="metric-tile"><div class="val">{camp["start_rate"]}%</div><div class="lbl">Learning Start Rate</div><div class="delta">Target: ≥30%</div></div>', unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        sec_header("✅", "QA Pre-Check — Before Handoff to Media Team")
 
-                st.markdown("<br>", unsafe_allow_html=True)
+        passed = sum(1 for _, _, p in QA_ITEMS if p)
+        failed = len(QA_ITEMS) - passed
 
-            st.markdown('<div class="sec-header">Nudge Builder</div>', unsafe_allow_html=True)
-            tone = st.select_slider("Tone", options=["Formal", "Professional", "Friendly", "Motivational", "Celebratory"])
-            length = st.radio("Message length", ["Short (1–2 lines)", "Medium (3–4 lines)", "Full (with CTA)"], horizontal=True)
+        qa_cols = st.columns([1, 3])
+        with qa_cols[0]:
+            st.markdown(f"""
+            <div class="profile-card" style="text-align:center; padding:20px;">
+              <div style="font-size:2.2rem; font-weight:900; color:{GREEN};">{passed}</div>
+              <div style="font-size:0.75rem; color:{TEXT_LITE}; font-weight:600;">PASSED</div>
+              <div style="height:1px; background:#EEF0F4; margin:10px 0;"></div>
+              <div style="font-size:2.2rem; font-weight:900; color:{RED};">{failed}</div>
+              <div style="font-size:0.75rem; color:{TEXT_LITE}; font-weight:600;">NEED ATTENTION</div>
+              <div style="margin-top:12px; font-size:0.75rem; color:{TEXT_LITE}; line-height:1.5;">Human review required before authoring sign-off</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-            if st.button("🔄 Regenerate Personalised Nudge", use_container_width=True):
-                nudge_variants = {
-                    "Birthday": {
-                        "Short (1–2 lines)": "🎂 Happy Birthday! Celebrate with a 15-min learning boost — just for you.",
-                        "Medium (3–4 lines)": "🎂 Happy Birthday from TAFE L&D! Today's a great day to invest in yourself. We've picked a short module aligned to your career goals — give it a try!",
-                        "Full (with CTA)": f"🎂 Wishing you a wonderful Birthday! At TAFE, we believe every milestone is a chance to grow. We've personalised today's recommendation just for you based on your learning history. [Start your birthday module →] It's only 20 minutes — the best gift you can give yourself today.",
-                    },
-                    "Cultural": {
-                        "Short (1–2 lines)": "🪔 Festival greetings! A short learning treat awaits you today.",
-                        "Medium (3–4 lines)": "🪔 Warm festival wishes from TAFE L&D! May this season bring growth and learning. We've lined up a short, festive module — a gift from us to you.",
-                        "Full (with CTA)": "🪔 Warm Diwali Greetings! As we celebrate the festival of lights, let's also light up our learning journeys. TAFE L&D has curated a 15-minute special for you. [Start the Diwali Learning Challenge →] Join 1,200+ colleagues who've already started today!",
-                    },
-                }
-                default_nudge = nudge_variants.get(camp["type"], {}).get(length, camp["nudge"])
-                st.markdown(f"""
-                <div style='background:{TAFE_CREAM}; border-radius:10px; padding:16px; border:1px dashed {TAFE_GREEN}; margin-top:10px;'>
-                  <div style='font-size:0.75rem; font-weight:700; color:{TAFE_GREEN}; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;'>Regenerated · {tone} · {length}</div>
-                  <div style='font-size:0.9rem; color:#333; line-height:1.6;'>{default_nudge}</div>
-                </div>
-                """, unsafe_allow_html=True)
+        with qa_cols[1]:
+            cats = {}
+            for cat, item, ok in QA_ITEMS:
+                cats.setdefault(cat, []).append((item, ok))
+
+            c1, c2 = st.columns(2)
+            for i, (cat, items) in enumerate(cats.items()):
+                with (c1 if i % 2 == 0 else c2):
+                    st.markdown(f'<div style="font-size:0.72rem; font-weight:700; color:{TEXT_LITE}; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">{cat}</div>', unsafe_allow_html=True)
+                    for item, ok in items:
+                        icon_cls = "qa-pass" if ok else "qa-fail"
+                        icon = "✓" if ok else "✗"
+                        st.markdown(f'<div class="qa-item"><span class="{icon_cls}">{icon}</span>{item}</div>', unsafe_allow_html=True)
+                    st.markdown("<br>", unsafe_allow_html=True)
+
+        st.success("✅ Storyboard generated and logged to SharePoint with model version, timestamp, and prompt ID. Awaiting content team review before authoring begins.")
+
+
+# ══════════════════════════════════════════════════════
+# AGENT 3 — LEARNING CAMPAIGNER
+# ══════════════════════════════════════════════════════
+elif "📣" in agent:
+    topbar("Learning Campaigner Agent", "UC-3 · Quick Win · Phase 1 · Always-on engagement")
+
+    cl, cr = st.columns([1.1, 2.5])
+
+    with cl:
+        sec_header("📅", "Campaigns")
+        if "sel_camp" not in st.session_state:
+            st.session_state.sel_camp = CAMPAIGNS[0]["name"]
+
+        for camp in CAMPAIGNS:
+            sc = {
+                "Active": GREEN, "Completed": NAVY, "Draft": "#D97706"
+            }[camp["status"]]
+            is_sel = st.session_state.sel_camp == camp["name"]
+            if st.button(
+                f"{camp['icon']}  {camp['name']}",
+                key=f"cb_{camp['name']}",
+                use_container_width=True,
+            ):
+                st.session_state.sel_camp = camp["name"]
+                st.rerun()
 
         st.markdown("---")
-        st.markdown('<div class="sec-header">Birthday Nudge Engine — Today\'s Queue</div>', unsafe_allow_html=True)
-        today_bday = [
-            ("Suresh Kumar", "Sales", "Product Knowledge Essentials", "Sent 8:02 AM", True),
-            ("Anitha Rao", "Manufacturing", "Safety Compliance Refresher", "Sent 8:02 AM", True),
-            ("Gopal M.", "R&D", "DIVA Pro Certification", "Pending 9:00 AM", False),
-            ("Latha S.", "HR", "Leadership Foundations", "Pending 9:00 AM", False),
-        ]
-        for name, dept, course, status, sent in today_bday:
-            icon = "✅" if sent else "🕐"
-            color = TAFE_GREEN if sent else "#FFA500"
+        sec_header("➕", "New Campaign")
+        st.text_input("Campaign name", placeholder="e.g. Safety Week Sprint", key="nc_name")
+        st.selectbox("Trigger", ["Date-based", "Birthday/Anniversary", "Low engagement", "Manager-initiated"], key="nc_trigger")
+        st.selectbox("Audience", ["All employees", "Department", "At-risk learners", "Specific role"], key="nc_aud")
+        if st.button("Create Campaign", use_container_width=True):
+            name = st.session_state.get("nc_name", "New Campaign")
+            st.success(f"'{name}' created as Draft.")
+
+    with cr:
+        camp = next(c for c in CAMPAIGNS if c["name"] == st.session_state.sel_camp)
+        sc = {"Active": GREEN, "Completed": NAVY, "Draft": "#D97706"}[camp["status"]]
+
+        st.markdown(f"""
+        <div class="camp-card" style="border-top-color:{camp['color']};">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+            <div style="font-size:1.4rem;">{camp['icon']}</div>
+            <div>
+              <div class="camp-title">{camp['name']}</div>
+              <div class="camp-meta">🔁 {camp['trigger']} &nbsp;·&nbsp; 👥 {camp['reach']} &nbsp;·&nbsp; 💬 {camp['channel']}</div>
+            </div>
+            <span class="pill" style="margin-left:auto; background:{sc}18; color:{sc};">{camp['status']}</span>
+          </div>
+          <div class="nudge-box">
+            <div style="font-size:0.7rem; color:{TEXT_LITE}; font-style:normal; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Sample Personalised Nudge</div>
+            {camp['nudge']}
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if camp["status"] != "Draft":
+            sec_header("📈", "Campaign Performance")
+            pm1, pm2, pm3 = st.columns(3)
+            for col, val, lbl, tgt, c in [
+                (pm1, f"{camp['sent']:,}",        "Nudges Sent",       "",       NAVY),
+                (pm2, f"{camp['open_rate']}%",    "Open Rate",         "Target ≥50%", GREEN if camp['open_rate'] >= 50 else RED),
+                (pm3, f"{camp['start_rate']}%",   "Learning Start Rate","Target ≥30%", GREEN if camp['start_rate'] >= 30 else RED),
+            ]:
+                col.markdown(f"""
+                <div class="metric" style="border-top:3px solid {c};">
+                  <div class="metric-val" style="color:{c};">{val}</div>
+                  <div class="metric-lbl">{lbl}</div>
+                  <div style="font-size:0.72rem; color:{TEXT_LITE}; margin-top:2px;">{tgt}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+
+        nb1, nb2 = st.columns(2)
+        tone = nb1.select_slider("Tone", ["Formal", "Professional", "Friendly", "Celebratory"])
+        length = nb2.radio("Length", ["Short", "Medium", "Full"], horizontal=True)
+
+        if st.button("🔄  Regenerate Nudge", use_container_width=True):
+            variants = {
+                "Short":  f"{camp['icon']} Quick nudge: 15 minutes of learning awaits you today, {camp['name'].split()[0]}.",
+                "Medium": camp['nudge'],
+                "Full":   camp['nudge'] + "\n\n[Start now →] It only takes 15 minutes — the best investment you'll make today.",
+            }
             st.markdown(f"""
-            <div style='background:white; border-radius:8px; padding:10px 16px; margin-bottom:7px; display:flex; align-items:center; gap:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05);'>
-              <div style='font-size:1.1rem;'>{icon}</div>
-              <div style='flex:1;'>
-                <div style='font-weight:600; font-size:0.88rem; color:{TAFE_NAVY};'>{name} <span style='font-weight:400; color:#888;'>· {dept} 🎂</span></div>
-                <div style='font-size:0.8rem; color:#888;'>Recommended: {course}</div>
-              </div>
-              <div style='font-size:0.8rem; color:{color}; font-weight:600;'>{status}</div>
+            <div style="background:{GREEN_SOFT}; border:1.5px dashed {GREEN}; border-radius:12px; padding:16px 20px; margin-top:10px;">
+              <div style="font-size:0.7rem; font-weight:700; color:{GREEN}; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Regenerated · {tone} · {length}</div>
+              <div style="font-size:0.88rem; color:{TEXT_DARK}; line-height:1.7;">{variants[length]}</div>
             </div>
             """, unsafe_allow_html=True)
 
-        st.markdown(f'<div style="font-size:0.78rem; color:#aaa; margin-top:6px;">Nudges triggered via Power Automate · HR birthday data sync at 7:00 AM daily · Opt-out honoured · Learning history pulled from Moodle</div>', unsafe_allow_html=True)
+        st.markdown("---")
+        sec_header("🎂", "Birthday Nudge Queue — Today")
+
+        for name, initials, dept, course, status, sent in BDAY_QUEUE:
+            sc2 = GREEN if sent else "#D97706"
+            st.markdown(f"""
+            <div class="bday-row">
+              <div class="bday-avatar">{initials}</div>
+              <div style="flex:1; min-width:0;">
+                <div class="bday-name">{name} 🎂 &nbsp;<span style="font-weight:400; color:{TEXT_LITE}; font-size:0.78rem;">{dept}</span></div>
+                <div class="bday-course">→ {course}</div>
+              </div>
+              <span class="pill" style="background:{sc2}18; color:{sc2}; font-size:0.72rem; white-space:nowrap;">{status}</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown(f'<div class="info-footer">Nudges sent via Power Automate · HR birthday sync at 7:00 AM daily · Opt-outs honoured · Learning history pulled from Moodle</div>', unsafe_allow_html=True)
