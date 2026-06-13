@@ -1,9 +1,0 @@
-course_id,title,category,target_roles,skills,duration_minutes,content_class
-C101,Hydraulic System Basics,Product Knowledge,"Dealer Service Engineer;Production Supervisor","Hydraulics;Diagnostics;Safety",30,Public/Internal
-C102,Lean Manufacturing Essentials,Operations,"Production Supervisor;Quality Analyst","Lean manufacturing;Problem solving;Waste reduction",45,Public/Internal
-C103,Service Diagnostics Playbook,Service,"Dealer Service Engineer;Sales Manager","Diagnostics;Customer communication;Troubleshooting",40,Public/Internal
-C104,Instructional Design Foundations,L&D,"L&D Consultant","Instructional design;Storyboarding;Assessment design",60,Public/Internal
-C105,Learning Analytics with Power BI,L&D,"L&D Consultant;Sales Manager;Production Supervisor","Learning analytics;Data storytelling;Dashboards",45,Public/Internal
-C106,NPI Confidential Product Brief,R&D,"R&D Engineer;Leadership","NPI process;Product knowledge;R&D roadmap",35,R&D Confidential
-C107,Safety Leadership for Supervisors,Compliance,"Production Supervisor;Quality Analyst","Safety leadership;People management;Compliance",25,Public/Internal
-C108,Dealer Engagement Campaigns,Sales,"Sales Manager;Dealer Service Engineer","Dealer engagement;Product training;Communication",30,Public/Internal
